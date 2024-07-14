@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Gradient Background</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>function createDistortionEffect(canvas, image, distortionFactor = 0.1) {
+    const ctx = canvas.getContext('2d');
+  
+    const animationLoop = () => {
+      requestAnimationFrame(animationLoop);
+  
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+  
+      for (let i = 0; i < data.length; i += 4) {
+        const x = (i / 4) % canvas.width;
+        const y = Math.floor((i / 4) / canvas.width);
+  
+        const distortionX = (Math.random() - 0.5) * distortionFactor;
+        const distortionY = (Math.random() - 0.5) * distortionFactor;
+  
+        const sourceX = Math.floor(x + distortionX);
+        const sourceY = Math.floor(y + distortionY);
+  
+        if (sourceX >= 0 && sourceX < canvas.width && sourceY >= 0 && sourceY < canvas.height) {
+          const sourceIndex = (sourceY * canvas.width + sourceX) * 4;
+          data[i] = data[sourceIndex];
+          data[i + 1] = data[sourceIndex + 1];
+          data[i + 2] = data[sourceIndex + 2];
+          data[i + 3] = data[sourceIndex + 3];
+        }
+      }
+  
+      ctx.putImageData(imageData, 0, 0);
+    };
+  
+    animationLoop();
+  }
+  
+  // Example usage
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  document.body.appendChild(canvas);
+  
+  const image = new Image();
+  image.src = 'https://ordinals.com/content/618ffb4e23e19566c7567841187a1c424dfd775e4f8cb633a7a3d4836784835fi0';
+  image.onload = () => createDistortionEffect(canvas, image);
+</script>
+</body>
+</html>

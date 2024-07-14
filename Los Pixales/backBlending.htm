@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Gradient Background</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>function createBlendingEffect(canvas, image1, image2, blendMode = 'multiply') {
+    const ctx = canvas.getContext('2d');
+  
+    ctx.globalCompositeOperation = blendMode;
+    ctx.drawImage(image1, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image2, 0, 0, canvas.width, canvas.height);
+  }
+  
+  // Example usage
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  document.body.appendChild(canvas);
+  
+  const image1 = new Image();
+  image1.src = 'https://ordinals.com/content/618ffb4e23e19566c7567841187a1c424dfd775e4f8cb633a7a3d4836784835fi0';
+  const image2 = new Image();
+  image2.src = 'https://ordinals.com/content/b623d4bb0c27083d14d4103204a7611ae6fb175a639e69ddb064d11242fce78fi0';
+  
+  image1.onload = () => {
+    image2.onload = () => {
+      createBlendingEffect(canvas, image1, image2, 'multiply');
+    };
+  };
+</script>
+</body>
+</html>

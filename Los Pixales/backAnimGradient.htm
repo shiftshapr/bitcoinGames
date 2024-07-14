@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Gradient Background</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+function createAnimatedGradient(canvas, colors, angle = 0) {
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+
+  const colorStops = [0, 0.33, 0.66, 1];
+  let currentOffset = 0;
+
+  gradient.addColorStop(colorStops[0], colors[0]);
+  gradient.addColorStop(colorStops[1], colors[1]);
+  gradient.addColorStop(colorStops[2], colors[2]);
+  gradient.addColorStop(colorStops[3], colors[0]);
+
+  const animationLoop = () => {
+    requestAnimationFrame(animationLoop);
+
+    console.log('starting animation loop');
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < colorStops.length; i++) {
+      const offset = (colorStops[i] + currentOffset) % 1;
+      gradient.addColorStop(offset, colors[i % colors.length]);
+    }
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    currentOffset += 0.01;
+    if (currentOffset >= 1) {
+      currentOffset = 0;
+    }
+  };
+
+  animationLoop();
+}
+
+
+
+
+  
+  // Example usage
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  document.body.appendChild(canvas);
+  
+  createAnimatedGradient(canvas, ['#ff0000', '#00ff00', '#0000ff']);
+</script>
+</body>
+</html>  

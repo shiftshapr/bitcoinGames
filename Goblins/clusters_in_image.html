@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><style>.color-box{width: 50px; height: 20px; display: inline-block; margin-right: 10px; border: 1px solid #000;}.flex-container {display: flex;}.flex-child {flex: 1; padding: 10px;}img{image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; width: 500px; height: auto;}</style></head><body>
+<div class="flex-container">
+<div class="flex-child"><img src="./traits/crown.png" alt="Source Image"></div>
+<div class="flex-child"><img src="clustered_crown.png" alt="Clustered Image"></div>
+<div class="flex-child"><h1>Colors in Image</h1>
+<ul>
+<li><button class="color-box" style="background-color:#000000;" onclick="copyToClipboard('#000000')"></button> #000000 - 195</li>
+<li><button class="color-box" style="background-color:#c80058;" onclick="copyToClipboard('#c80058')"></button> #c80058 - 18</li>
+<li><button class="color-box" style="background-color:#cb9800;" onclick="copyToClipboard('#cb9800')"></button> #cb9800 - 102</li>
+<li><button class="color-box" style="background-color:#d06d00;" onclick="copyToClipboard('#d06d00')"></button> #d06d00 - 31</li>
+<li><button class="color-box" style="background-color:#fbde00;" onclick="copyToClipboard('#fbde00')"></button> #fbde00 - 155</li>
+<li><button class="color-box" style="background-color:#fea2b0;" onclick="copyToClipboard('#fea2b0')"></button> #fea2b0 - 9417</li>
+<li><button class="color-box" style="background-color:#ff0077;" onclick="copyToClipboard('#ff0077')"></button> #ff0077 - 10</li>
+<li><button class="color-box" style="background-color:#ff9bd0;" onclick="copyToClipboard('#ff9bd0')"></button> #ff9bd0 - 4</li>
+<li><button class="color-box" style="background-color:#fff27d;" onclick="copyToClipboard('#fff27d')"></button> #fff27d - 2</li>
+<li><button class="color-box" style="background-color:#fff68e;" onclick="copyToClipboard('#fff68e')"></button> #fff68e - 66</li>
+</ul></div></div>
+<script>function copyToClipboard(text) {  var dummy = document.createElement("textarea");  document.body.appendChild(dummy);  dummy.value = text;  dummy.select();  document.execCommand("copy");  document.body.removeChild(dummy);  alert("Copied " + text);}</script>
+</body></html>

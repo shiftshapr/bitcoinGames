@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Gradient Background</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>function createGenerativeArt(canvas) {
+    const ctx = canvas.getContext('2d');
+  
+    const drawShape = (x, y, size, angle, depth) => {
+      if (depth === 0) return;
+  
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size * Math.cos(angle), y + size * Math.sin(angle));
+      ctx.stroke();
+  
+      const newSize = size * 0.8;
+      const newAngle1 = angle + Math.PI / 4;
+      const newAngle2 = angle - Math.PI / 4;
+  
+      drawShape(x + newSize * Math.cos(newAngle1), y + newSize * Math.sin(newAngle1), newSize, newAngle1, depth - 1);
+      drawShape(x + newSize * Math.cos(newAngle2), y + newSize * Math.sin(newAngle2), newSize, newAngle2, depth - 1);
+    };
+  
+    const animationLoop = () => {
+      requestAnimationFrame(animationLoop);
+  
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+      drawShape(canvas.width / 2, canvas.height / 2, canvas.width / 4, 0, 8);
+    };
+  
+    animationLoop();
+  }
+  
+  // Example usage
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  document.body.appendChild(canvas);
+  
+  createGenerativeArt(canvas);
+</script>
+</body>
+</html>

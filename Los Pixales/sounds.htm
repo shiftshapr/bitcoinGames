@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Player with SVG Icons</title>
+<style>
+  .sound-item {
+    cursor: pointer;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+  }
+  .speaker-icon {
+    margin-left: 10px;
+    width: 24px;
+    height: 24px;
+    fill: black; /* Default fill */
+  }
+  .speaker-icon.playing {
+    fill: red; /* Fill when playing */
+  }
+  .paging-links {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .paging-links button {
+    margin: 0 5px;
+  }
+</style>
+</head>
+<body>
+
+<div id="soundContainer"></div>
+<div class="paging-links"></div>
+
+<script>
+
+const soundsData = [
+      {"name": "epic opening","id": "f46e9d2f3024ddda6dc08a467f68140f01b17ccdc124dd09d78ca8563b5933b1i0"},
+      {"name": "xylophone","id": "d55ee7b54901e369ee606e5860600173378d10cccd790cea843a29c5b3bde18ai0"},
+      {"name": "scales","id": "80b00590a837fa6fb1fc4df3a33ff294b210c39e8a179f46cb9b398877de1d1ci0"},
+      {"name": "Cool piano scales","id": "5b76c51218256db827909dbe708d423134ca6f66eee7a428b5e3834319bcb883i0"},
+      {"name": "Crickets","id": "f49a91b1bc182ada8044811659c2281f42fe37c6f68126a7b7c01fb2c90bdf02i0"},
+      {"name": "Gong","id": "3b291a48bbd558a71a7db368c3b445afecf96de3f618a183a1629dff6ed506bdi0"},
+      {"name": "2001 Space Oddesey","id": "e2584d217363e780fe6eca6a4b9a3e5ae4dea90ac8ccf0a5f47e1359d4f12879i0"},
+      {"name": "beat","id": "e514b18eedb1b46884c24f8f087ccd5c955e3da0e87c5d22d473b08fd2fe1f5di0"},
+      {"name": "beat","id": "1d21933ebd66445792f51976f55ae53aad09c6b26f40cc111d8b01651eeb49a4i0"}    
+]
+
+let currentPage = 1;
+const soundsPerPage = 50;
+let currentlyPlayingAudio = null;
+
+function displaySounds(page) {
+    const start = (page - 1) * soundsPerPage;
+    const end = start + soundsPerPage;
+    const soundsToShow = soundsData.slice(start, end);
+
+    const container = document.getElementById('soundContainer');
+    container.innerHTML = ''; // Clear existing sounds
+
+    soundsToShow.forEach(sound => {
+        const soundDiv = document.createElement('div');
+        soundDiv.className = 'sound-item';
+        soundDiv.innerHTML = `
+            ${sound.name} 
+            <svg class="speaker-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3,9 v6 h4 l5,5 V4 l-5,5 H3 z"/>
+            </svg>
+            ${sound.id}`;
+        soundDiv.setAttribute('data-sound-id', sound.id);
+
+        // Ensure audio elements are created only once and reused
+        let audio = document.getElementById(`${sound.id}`);
+        if (!audio) {
+            audio = new Audio(`https://ordinals.com/content/${sound.id}`);
+            audio.id = `${sound.id}`;
+            document.body.appendChild(audio);
+        }
+
+        soundDiv.addEventListener('click', function() {
+            toggleSound(`${sound.id}`, this);
+        });
+        
+        container.appendChild(soundDiv);
+    });
+
+    updatePagingLinks();
+}
+
+function updatePagingLinks() {
+    const totalSounds = soundsData.length;
+    const totalPages = Math.ceil(totalSounds / soundsPerPage);
+    const pagingLinksContainer = document.querySelector('.paging-links');
+    pagingLinksContainer.innerHTML = ''; // Clear existing links
+
+    // Function to create a button for navigation
+    function createNavButton(page, text) {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.style.margin = '0 5px'; // Add spacing between buttons
+        button.addEventListener('click', () => {
+            currentPage = page;
+            displaySounds(currentPage);
+        });
+        return button;
+    }
+
+    // Add up to three previous page links
+    for (let i = Math.max(1, currentPage - 3); i < currentPage; i++) {
+        pagingLinksContainer.appendChild(createNavButton(i, i.toString()));
+    }
+
+    // Current page button
+    const currentPageButton = createNavButton(currentPage, currentPage.toString());
+    currentPageButton.disabled = true; // Disable button for the current page
+    pagingLinksContainer.appendChild(currentPageButton);
+
+    // Add up to three next page links
+    for (let i = currentPage + 1; i <= Math.min(currentPage + 3, totalPages); i++) {
+        pagingLinksContainer.appendChild(createNavButton(i, i.toString()));
+    }
+}
+
+function toggleSound(soundId, clickedElement) {
+    // Clear the playing state from all icons first
+    document.querySelectorAll('.speaker-icon.playing').forEach(icon => {
+        icon.classList.remove('playing');
+    });
+
+    // Check if the audio element for this sound is already playing
+    if (currentlyPlayingAudio && !currentlyPlayingAudio.paused && currentlyPlayingAudio.getAttribute('data-sound-id') === soundId) {
+        currentlyPlayingAudio.pause();
+        currentlyPlayingAudio = null; // Clear the current playing audio
+    } else {
+        // Stop and reset any currently playing audio
+        if (currentlyPlayingAudio) {
+            currentlyPlayingAudio.pause();
+        }
+
+        // Create a new Audio object or reuse the existing one
+        currentlyPlayingAudio = new Audio(`https://ordinals.com/content/${soundId}`);
+        currentlyPlayingAudio.setAttribute('data-sound-id', soundId); // Set a custom attribute
+        currentlyPlayingAudio.play();
+
+        // Find the specific .speaker-icon within the clicked .sound-item and set it to playing
+        const icon = clickedElement.querySelector('.speaker-icon');
+        if (icon) {
+            icon.classList.add('playing');
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => displaySounds(currentPage));
+
+</script>
+
+</body>
+</html>

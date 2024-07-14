@@ -1,0 +1,1431 @@
+<input id="input1" type="number" style="display:none" />
+<input id="input2" type="datetime-local" style="display:none" />
+<img id="loadingImage" src="https://natowls.xyz/images/loading.gif" style="display: none;">  
+
+<script id="preview" mint="MINT_INSCRIPTION_ID">
+let mintText = document.getElementById('preview').getAttribute('mint')
+let blk = 479808;
+
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
+const launchBlock = 851677;    // CHANGE
+
+let nowDate = new Date(); 
+let is1214 = isDDLP(nowDate);
+console.log('is1214',is1214);
+const nDisplay = nowDate.toISOString().slice(0, 16);
+let now = nowDate.getTime();
+console.log('now',now);
+console.log('nDisplay',nDisplay);
+
+let audioPlaying = false;
+let noTraits = false;
+let noRain = false;
+let sound = true;
+let stopAnimations = false;
+let updates, entries, backgroundCanvas, matrixRainCanvas, textContainer, gematria,reaveal1,reveal2;
+let isFoggy,isBreathing,isGlowing,isShaking,isSpinning,isPulsating,isMouseFollow = false;
+let pfpContainer, pfpCanvas, pfpCtx;
+let inputChanged = false;
+
+let outerContainer = document.createElement('div');
+outerContainer.id = 'outerContainer';
+outerContainer.style.position = 'relative';
+outerContainer.style.width = '600px';
+outerContainer.style.height = '600px';
+outerContainer.style.top = '50%';
+outerContainer.style.left = '50%';
+outerContainer.style.transform = 'translate(-50%, -50%)';
+outerContainer.style.backgroundColor = 'transparent';
+document.body.appendChild(outerContainer);
+
+let audio = document.createElement('audio');
+audio.id = 'myAudio';
+audio.preload = 'auto';
+audio.style.display = 'none';
+document.body.appendChild(audio);
+
+let audio2 = document.createElement('audio');
+audio2.id = 'myAudio2';
+audio2.preload = 'auto';
+audio2.style.display = 'none';
+document.body.appendChild(audio2);
+
+let jsonColorData,colorArrays, soundArrays = [];
+let blockheight;
+
+async function getBlockheight() {
+  const metadata = await getMetadata('https://ordinals.com/r/blockheight');
+  return metadata;
+}
+
+function isDDLP(date) {
+    const givenDate = new Date(date);
+    const year = givenDate.getFullYear();
+    const month = givenDate.getMonth(); // Month is zero-based (0 = January, 11 = December)
+    const day = givenDate.getDate();
+
+    const ddlpDate = new Date(`${year}-12-14T00:00:00-08:00`);
+
+    return (
+        month === ddlpDate.getMonth() &&
+        day === ddlpDate.getDate() &&
+        year === ddlpDate.getFullYear()
+    );
+}
+
+function initialize(result) {
+  if(result) {
+    console.log('initialize', result);
+    data = JSON.parse(result);
+    blockNumber = data.blk;
+    if (data.d) d = data.d;
+  }
+  loadAndModifyPacha(blockNumber,d,now);
+}
+
+const patternToTrait = {
+    'repeat_2_1': 'Flower',
+    'repeat_2_2': 'Glowing',
+    'repeat_2_5': 'Heart',
+    'repeat_2_5': 'Red/Blue',
+    'repeat_2_3': 'Eye Patch',
+    'repeat_2_6': 'Wide',
+    'repeat_2_7': 'Wink',
+    'repeat_2_8': 'Zombie',
+    'repeat_2_9': 'Wide',
+    'multiple_12': 'Aviator',
+    'multiple_13': 'Cat',
+    'multiple_18': '3D',
+    'multiple_19': 'Space',
+    'multiple_33': 'Starry',
+    'multiple_69': 'Thug Life',
+    'repeat_3_0': 'Crown',
+    'repeat_4_0': 'Pipe',
+    'repeat_5_0': 'Stubble',
+    'repeat_2_1': 'Flower',
+    'repeat_3_1': 'Mullet',
+    'repeat_4_1': 'Captain',
+    'repeat_5_1': 'Stubble',
+    'repeat_2_2': 'Glowing',
+    'repeat_3_2': 'Messy',
+    'repeat_4_2': 'Cowboy',
+    'repeat_5_2': 'Stubble',
+    'repeat_2_3': 'Eye Patch',
+    'repeat_3_3': 'Wavy',
+    'repeat_4_3': 'Pirate',
+    'repeat_5_3': 'Stubble',
+    'repeat_2_5': 'Heart',
+    'repeat_5_5': 'Spikes',
+    'repeat_5_5': 'Cowboy',
+    'repeat_5_5': 'Goatee',
+    'repeat_2_5': 'Red/Blue',
+    'repeat_3_5': 'Undercut',
+    'repeat_4_5': 'Cowboy',
+    'repeat_5_5': 'Soul Patch',
+    'repeat_2_6': 'Wide',
+    'repeat_3_6': 'Straight',
+    'repeat_4_6': 'Baseball',
+    'repeat_5_6': 'Soul Patch',
+    'repeat_2_7': 'Wink',
+    'repeat_3_7': 'Swoosh',
+    'repeat_4_7': 'Viking',
+    'repeat_5_7': 'Soul Patch',
+    'repeat_2_8': 'Zombie',
+    'repeat_3_8': 'Messy',
+    'repeat_4_8': 'Cowboy',
+    'repeat_5_8': 'Stubble',
+    'repeat_2_9': 'Wide',
+    'repeat_3_9': 'Straight',
+    'repeat_4_9': 'Safety',
+    'repeat_5_9': 'Goatee',
+    'palindrome_6': 'Diamond',
+    'multiple_7': 'Cigarette',
+    'multiple_11': 'Cigar',
+    'multiple_12': 'Aviator',
+    'multiple_13': 'Cat',
+    'multiple_14': 'Space Explorer',
+    'multiple_15': 'Astronomer',
+    'multiple_16': 'Matrix',
+    'multiple_17': 'Volcano Explorer',
+    'multiple_18': '3D',
+    'multiple_19': 'Space',
+    'multiple_33': 'Starry',
+    'multiple_69': 'Thug Life',
+    'perfect_square_4': 'Gold tooth',
+    'perfect_square_5': 'Gold Grill',
+    'contains_420': 'Laser'
+};
+
+const phraseArray = [
+    ['PACHA', 'GOOD•MORNING•LFG', 'I GOT A $DOG IN THIS FIGHT','$DOG•GO•TO•THE•MOON','DOG ARMY'],
+    ['THAT SATS MOVIE GONNA SLAP', 'SATS THE MOVIE', 'ORDINAL IDOL', 'ORIDNALS GETTING A VOICE', 'METAWEB PUNKS'],
+    ['010101010101010', '01 01 01 01 01 01 01', '00110011001100', '0 0 000 0 0 000 0 0 000', '1 1 111 1 1 111 1 1 111'],
+]
+
+// CSS Styles
+const styles = `
+@keyframes glow {
+    0% { filter: drop-shadow(0 0 5px rgba(255, 165, 0, 1)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 165, 0, 1)); }
+    100% { filter: drop-shadow(0 0 5px rgba(255, 165, 0, 1)); }
+}
+.glow { animation: glow 1s infinite; }
+
+@keyframes pulsate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+}
+.pulsate { animation: pulsate 1s infinite; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-0.3px); }
+    75% { transform: translateX(0.3px); }
+}
+.shake { animation: shake 0.5s infinite; }
+
+@keyframes breathing {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.005); }
+    100% { transform: scale(1); }
+}
+.breathing { animation: breathing 2s infinite; }
+
+@keyframes fog {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+.fog { animation: fog 3s infinite; }
+
+.spinning {
+    animation: spin 1s infinite linear;
+    transform-origin: 50% 50%; 
+}    
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.text-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-container * {
+  font-size: inherit;
+}
+
+.text {
+  font-family: 'Press Start 2P', cursive; /* Pixelated font */
+  font-size: 2rem;
+  color: #fff;
+  margin: 20px;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 0.15em solid #fff; /* White cursor */
+  animation: typewriter 4s steps(40, end) 1s 1 normal both, blink 1s step-end infinite alternate;
+  color: #fff; /* White text */
+  font-size: 2rem;
+}
+
+.fade-out {
+  animation: fadeOut 2s forwards;
+}
+`;
+
+// Append the styles to the head
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
+
+function applyGlow(svgElement, duration) {
+    svgElement.style.animationDuration = duration + 's';
+    svgElement.classList.add('glow');
+    console.log('svgElement(applyGlow):',svgElement);
+}
+
+function applyPulsatingGlow(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('pulsate');
+}
+
+function mouseFollow(svgElement) {
+    document.addEventListener('mousemove', (event) => {
+        //console.log('svgElement(mouseFollow):',svgElement);
+        const rect = svgElement.getBoundingClientRect();
+        const eyeX = rect.left + rect.width / 2;
+        const eyeY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - eyeY, event.clientX - eyeX);
+        const x = Math.cos(angle) * 1;
+        const y = Math.sin(angle) * 1;
+        svgElement.setAttribute('transform', `translate(${x}, ${y})`);
+    });
+}
+
+function applyShaking(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('shake');
+}
+
+function applyBreathing(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('breathing');
+}
+
+function applyFog(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('fog');
+}
+
+function estimateBlockHeight(targetDate) {
+    // Block height at June 12, 2024 at 9:28 PDT
+    const referenceBlockHeight = 847642;
+    const referenceDate = new Date('2024-06-12T16:28:00Z'); // Convert to UTC
+
+    // Average block time in minutes
+    const averageBlockTimeMinutes = 10;
+
+    // Calculate the time difference in minutes
+    const timeDifferenceMinutes = (targetDate - referenceDate) / 60000;
+
+    // Estimate the block height
+    const estimatedBlockHeight = Math.floor(referenceBlockHeight + (timeDifferenceMinutes / averageBlockTimeMinutes));
+
+    return estimatedBlockHeight;
+}
+
+function convertBlockPatternsToTraits(patterns, updates) {
+    console.log('updates:',updates);
+    const categoryMap = {};
+
+    // First, categorize the traits
+    for (const pattern of patterns) {
+        const trait = patternToTrait[pattern];
+        const matchingTrait = traits.find(t => t.trait === trait);
+
+        if (matchingTrait) {
+            const category = matchingTrait.category;
+
+            if (!categoryMap[category]) {
+                categoryMap[category] = [];
+            }
+
+            categoryMap[category].push({ pattern, ...matchingTrait });
+        }
+    }
+
+    // Now handle categories with more than one trait
+    const selectedTraits = [];
+
+    for (const category in categoryMap) {
+        const traitsInCategory = categoryMap[category];
+
+        if (traitsInCategory.length > 1) {
+            const selectedIndex = updates % traitsInCategory.length;
+            const selectedTrait = traitsInCategory[selectedIndex];
+            selectedTraits.push(selectedTrait);
+        } else {
+            selectedTraits.push(traitsInCategory[0]);
+        }
+    }
+
+    // Sort the selected traits based on their pattern order in patternToTrait
+    selectedTraits.sort((a, b) => {
+        const aIndex = Object.keys(patternToTrait).indexOf(a.pattern);
+        const bIndex = Object.keys(patternToTrait).indexOf(b.pattern);
+        return aIndex - bIndex;
+    });
+
+    // Extract and return the inscription IDs
+    console.log('selectedTraits:',selectedTraits);
+    return selectedTraits.map(trait => trait.inscriptionId);
+}
+
+function applyGradient(svg, type, stops, options) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    let defs = svg.querySelector('defs');
+    let gradient = svg.querySelector('#backgroundGradient');
+
+    if (gradient) {
+        let existingStops = gradient.querySelectorAll('stop');
+        existingStops.forEach((stop, index) => {
+            if (stops[index]) {
+                stop.setAttribute("stop-color", stops[index].color);
+                stop.setAttribute("offset", stops[index].offset);
+            }
+        });
+    } else {
+        // If <defs> or the gradient doesn't exist, create them
+        if (!defs) {
+            defs = document.createElementNS(svgNS, "defs");
+            svg.insertBefore(defs, svg.firstChild);
+        }
+        gradient = document.createElementNS(svgNS, type === 'radial' ? "radialGradient" : "linearGradient");
+        gradient.setAttribute("id", "backgroundGradient");
+        defs.appendChild(gradient);
+
+        // Create and append the gradient stops
+        stops.forEach(stop => {
+            const gradientStop = document.createElementNS(svgNS, "stop");
+            gradientStop.setAttribute("offset", stop.offset);
+            gradientStop.setAttribute("stop-color", stop.color);
+            gradient.appendChild(gradientStop);
+        });
+    }
+
+    // Set gradient properties based on type
+    if (type === 'radial') {
+        gradient.setAttribute("cx", options.cx || "50%");
+        gradient.setAttribute("cy", options.cy || "50%");
+        gradient.setAttribute("r", options.radius || "50%");
+        gradient.setAttribute("fx", options.fx || options.cx || "50%");
+        gradient.setAttribute("fy", options.fy || options.cy || "50%");
+    } else if (type === 'conic') {
+        gradient.setAttribute("cx", options.cx || "50%");
+        gradient.setAttribute("cy", options.cy || "50%");
+        gradient.setAttribute("gradientTransform", options.transform || "rotate(0)");
+    } else {
+        // Assume linear gradient, setting default values
+        gradient.setAttribute("x1", options.x1 || "0%");
+        gradient.setAttribute("y1", options.y1 || "0%");
+        gradient.setAttribute("x2", options.x2 || "100%");
+        gradient.setAttribute("y2", options.y2 || "100%");
+    }
+
+    let background = svg.querySelector('#background') || document.createElementNS(svgNS, "rect");
+    if (!svg.querySelector('#background')) {
+        background.setAttribute("id", "background");
+        background.setAttribute("width", "100%");
+        background.setAttribute("height", "100%");
+        svg.appendChild(background);
+    }
+    background.setAttribute("fill", "url(#backgroundGradient)");
+}
+
+function generateCenteredGradations(hex, gradations) {
+    const { h, s, l } = hexToHsl(hex);
+    const gradationArray = [];
+    const step = 40 / (gradations - 1); // Determine the step size based on the number of gradations
+
+    for (let i = 0; i < gradations; i++) {
+        const newL = Math.min(Math.max(l + (i * step) - 20, 0), 100); // Ensure the new lightness value is within bounds
+        gradationArray.push(hslToHex({ h, s, l: newL }));
+    }
+
+    return gradationArray;
+}
+
+function rgbToHex(r, g, b) {
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+function hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(x => x + x).join('');
+    }
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return { r, g, b };
+}
+
+function hexToHsl(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case rNorm: h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+            case gNorm: h = (bNorm - rNorm) / d + 2; break;
+            case bNorm: h = (rNorm - gNorm) / d + 4; break;
+        }
+        h *= 60;
+    }
+
+    return { h, s: s * 100, l: l * 100 };
+}
+
+function hslToHex(hsl) {
+    const { h, s, l } = hsl;
+    const sNorm = s / 100;
+    const lNorm = l / 100;
+
+    const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = lNorm - c / 2;
+    let r = 0, g = 0, b = 0;
+
+    if (0 <= h && h < 60) {
+        r = c; g = x; b = 0;
+    } else if (60 <= h && h < 120) {
+        r = x; g = c; b = 0;
+    } else if (120 <= h && h < 180) {
+        r = 0; g = c; b = x;
+    } else if (180 <= h && h < 240) {
+        r = 0; g = x; b = c;
+    } else if (240 <= h && h < 300) {
+        r = x; g = 0; b = c;
+    } else if (300 <= h && h < 360) {
+        r = c; g = 0; b = x;
+    }
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+// Main Function
+
+function generateHexColor(dnaArray, polarity) {
+    if (!Array.isArray(dnaArray) || dnaArray.length < 5 || dnaArray.length > 6) {
+        console.error('Invalid DNA array. Expected an array of 5 or 6 digits:', dnaArray);
+        return '';
+    }
+    if (typeof polarity !== 'number' || (polarity !== 0 && polarity !== 1)) {
+        console.error('Invalid polarity. Expected 0 or 1:', polarity);
+        return '';
+    }
+
+    const firstTwoDigits = parseInt(dnaArray.slice(0, 2).join(''), 10);
+
+    // Generate base color using HSL and convert to hex
+    const baseHsl = {
+        h: firstTwoDigits % 360, // Ensure hue is within 0-359 degrees
+        s: 100, // Maximum saturation
+        l: 50  // Neutral lightness
+    };
+
+    const baseHex = hslToHex(baseHsl);
+
+    // Adjust lightness based on polarity
+    const adjustedHsl = { 
+        ...baseHsl, 
+        l: polarity === 0 ? Math.max(baseHsl.l - 40, 0) : Math.min(baseHsl.l + 40, 100) 
+    };
+
+    // Convert adjusted HSL back to hex
+    const adjustedHex = hslToHex(adjustedHsl);
+
+    return adjustedHex;
+}
+
+function getColor(color, colorArray) {
+//console.log(`getColor called with color: ${color} and colorArray: ${colorArray}`);
+
+    if (color === 'dark') {
+        if (dna[0] < 2 ) {
+        return '#000';
+        } else {
+            return generateHexColor(dna, 0)
+        }
+    } else if (color === 'light') {
+        if (dna[0] < 2 ) {
+            return '#FFF';
+        } else {
+            return generateHexColor(dna, 1)
+        }
+    } else if (color === 'white') {
+        return '#fff';
+    } else if (color === 'black') {
+        return '#000000';
+    } else if (!isNaN(parseInt(color))) {
+        return colorArray[parseInt(color)];
+    } else {
+        try {
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            return `rgb(${r},${g},${b})`;
+        } catch (e) {
+            return `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`;
+        }
+    }   
+}
+
+function applyPattern(patternIndex, svgContainer, dna, colorArrays) {
+    const pattern = patterns[patternIndex];
+    // console.log(`Applying pattern ${patternIndex} with dna ${dna}`);
+
+    let colorArray = [];
+    if (dna[0] < 2) {    // classic
+        if (patternIndex === 2) {
+            colorArray = generateCenteredGradations('#267DD0', 5);
+        } else if (patternIndex > 2) {
+            colorArray = colorArrays[patternIndex];
+        } 
+    } else {
+        if (patternIndex === 2) {
+            //console.log('dna[0]',dna[0]);
+            //console.log('primary color',colorArrays[dna[1]%3][dna[2]]);           
+            colorArray = generateCenteredGradations(colorArrays[dna[1]%3][dna[2]], 5);
+        } else if (patternIndex > 2) {
+            //console.log('color array',(dna[3]*10+dna[4])%6+3);           
+            colorArray = colorArrays[(dna[3]*10+dna[4])%6+3];
+        } 
+    } 
+
+    // Reorder the colors based on the block number
+    //console.log(`Reordering colors for pattern ${patternIndex} with block number ${blk}`);
+    //console.log('colorArray (before reordering):', colorArray);
+    colorArray = reorderColors(colorArray, dna);
+    //console.log('colorArray (after reordering):', colorArray);
+
+    pattern.colors.forEach(colorSet => {
+        colorSet.paths.forEach(pathSelector => {
+            //console.log(`Selecting paths with selector: ${pathSelector}`);
+            try {
+                const paths = svgContainer.querySelectorAll(pathSelector);
+                //console.log(`Found ${paths.length} paths for selector ${pathSelector}`);
+                paths.forEach(path => {
+                    const color = getColor(colorSet.color, colorArray, dna);
+                    //console.log(`Applying color ${color} to path`, path);
+                    path.style.stroke = color;
+                });
+            } catch (e) {
+                console.error(`Error selecting paths with selector ${pathSelector}:`, e);
+            }
+        });
+    });
+}
+
+function applyAnimations(svgContainer, reverseBlock, updates, isFirst, gematria) {
+    isFoggy = false;
+    isBreathing = false;
+    isGlowing = true;
+    isShaking = true;
+    isSpinning = false;
+    isPulsating = true;
+    isMouseFollow = true;
+
+    if (!stopAnimations) {
+        const spinningElements = svgContainer.querySelectorAll('.bullet');
+        //console.log('applying spinning to', spinningElements);
+        if (isSpinning) {
+            spinningElements.forEach(element => {
+                element.classList.add('spinning');
+                if (element.classList.contains('left')) {
+                    element.style.transformOrigin = '37.5% 20%';
+                } else {
+                    element.style.transformOrigin = '61.5% 20%';
+                }
+            });
+        }
+        
+        const shakingElement = svgContainer.querySelector('#bridge');
+        //console.log('applying shaking to', shakingElement);
+        if (isShaking && shakingElement) {
+            applyShaking(shakingElement, 1);
+        }
+
+        const pulsatingElement = svgContainer.querySelector('#philtrumGem');
+        //console.log('applying pulsating to', pulsatingElement);
+        if (isPulsating && pulsatingElement) {
+            applyPulsatingGlow(pulsatingElement, 1);
+        }
+
+        const glowingElement = svgContainer.querySelector('#thirdEyeInner');
+        //console.log('applying glow to', glowingElement);
+        if (isGlowing && glowingElement) {
+            applyGlow(glowingElement, 2);
+        }
+
+        const breathingElements = document.querySelectorAll('.temple.flower');
+        //console.log('breathingElements',breathingElements);
+        if (isBreathing) {   
+            breathingElements.forEach(element => {
+                applyBreathing(element, 2);
+            });
+        }
+        
+        const fogElement = document.querySelector('#backgroundCanvas');
+        //console.log('fogElement',fogElement);
+        if (isFoggy && fogElement) {
+            applyFog(fogElement, 10);
+        };
+
+        const followElements = document.querySelectorAll('.pupil.accent');
+        //console.log('followElements',followElements);
+        if (isMouseFollow) {
+            followElements.forEach(element => {
+                mouseFollow(element);
+            });
+        };
+    }    
+}
+
+function displayImage(blk, colorArrays, updates, isFirst = true) {
+    //console.log('outerContainer:',outerContainer);
+
+    if (outerContainer) {
+        const children = Array.from(outerContainer.children);
+        children.forEach(child => {
+            if (child.tagName.toLowerCase() === 'img') {
+                outerContainer.removeChild(child);
+            }
+        });
+        //console.log('Image elements removed');
+    } else {
+        console.error('outerContainer not found');
+    }
+
+    function loadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+            img.src = url;
+        });
+    }
+    
+    const reverseBlock = reverseDigits(blk);
+    
+    fetch('https://natowls.xyz/deploy_pacha.json') // CHANGE THIS
+        .then(response => response.json())
+        .then(data => {
+            colorArrays = data.colors;
+            const backgrounds = data.backgrounds;
+            const poses = data.poses;
+
+            // Randomly select a background and a pose
+            const randomBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            const randomPose = poses[Math.floor(Math.random() * poses.length)];
+
+            // Get the image IDs
+            const backgroundId = Object.values(randomBackground)[0];
+            const poseId = Object.values(randomPose)[0];
+
+            // Load the background image
+            loadImage(`https://ordinals.com/content/${backgroundId}`)
+            .then(loadedBackgroundImage => {
+                backgroundImage = loadedBackgroundImage;
+                const firstDigit = reverseBlock[0];
+                //console.log('colorArrays',colorArrays);
+                //console.log('reverseBlock',reverseBlock);
+                //console.log('isFirst',isFirst);
+
+                if (firstDigit < 8) { // 20% of the time (firstDigit is 0 or 1)
+                    // Use the modified initbackground function to draw gradient background
+                    const initBackgroundImage = initBackground(colorArrays[8], reverseBlock, isFirst);
+                    backgroundImage = initBackgroundImage;
+                }
+
+                // Load the pose image
+                loadImage(`https://ordinals.com/content/${poseId}`)
+                .then(loadedPoseImage => {
+                    poseImage = loadedPoseImage;
+                    const backgroundCanvas = document.getElementById('backgroundCanvas');
+                    const poseCanvas = document.getElementById('poseCanvas');
+                    const bgCtx = backgroundCanvas.getContext('2d');
+                    const poseCtx = poseCanvas.getContext('2d');
+
+                    const canvasWidth = 600;
+                    const canvasHeight = 600;
+
+                    backgroundCanvas.width = canvasWidth;
+                    backgroundCanvas.height = canvasHeight;
+                    poseCanvas.width = canvasWidth;
+                    poseCanvas.height = canvasHeight;
+
+                    // Set the image smoothing to false for a pixelated effect
+                    bgCtx.imageSmoothingEnabled = false;
+
+                    // Draw the background image on the background canvas, scaling it down to fit
+                    bgCtx.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight);
+
+                    // Set the image smoothing to true for a smooth pose image
+                    poseCtx.imageSmoothingEnabled = true;
+
+                    // Calculate the position to align the pose image centered with the bottom
+                    const poseX = (canvasWidth - poseImage.width) / 2;
+                    const poseY = canvasHeight - poseImage.height;
+
+                    // Draw the pose image on the pose canvas
+                    poseCtx.drawImage(poseImage, poseX, poseY);
+
+                    // Add a click event listener to the pose canvas
+                    poseCanvas.addEventListener('click', () => {
+                        // Draw the background image on the PFP canvas, scaling it down to fit
+                        pfpCtx.imageSmoothingEnabled = false;
+                        pfpCtx.drawImage(backgroundImage, 0, 0, poseImage.width, poseImage.height);
+
+                        // Draw the pose image on top of the background on the PFP canvas
+                        pfpCtx.imageSmoothingEnabled = true;
+                        pfpCtx.drawImage(poseImage, 0, 0);
+
+                        // Show the PFP container
+                        pfpContainer.style.display = 'block';
+                        outerContainer.style.display = 'none';
+                    });
+
+                    // Add a click event listener to the PFP container to close it
+                    pfpContainer.addEventListener('click', () => {
+                        pfpContainer.style.display = 'none';
+                        outerContainer.style.display = 'block';
+                        event.stopPropagation(); 
+                    });
+
+                    console.log('inputChanged',inputChanged);
+                    if (inputChanged && pfpContainer.style.display === 'block') {
+                        pfpContainer.style.display = 'none';
+                        outerContainer.style.display = 'block';
+                        inputChanged = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading pose image:', error);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading background image:', error);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading deploy_pacha.json:', error);
+        });
+
+    const speedFactor = getSpeedFactor(reverseBlock[3]);
+    console.log('blockheight:', blockheight);
+    //console.log('phraseArray:', phraseArray);
+    let phrases = phraseArray[blockheight % phraseArray.length];
+    console.log('phrases:',phrases);
+    const randomize = true; // Set to false to display phrases in a row
+    initMatrixRain(speedFactor, phrases, randomize);
+    console.log('reveal2', reveal2)
+    if (noRain === false && reveal2 || true ) {
+        matrixRainCanvas.style.display = 'block';
+    } else {
+        matrixRainCanvas.style.display = 'none';
+    }
+
+    //applyAnimations(svgContainer, reverseBlock, updates, isFirst, calculateGematria(blk));
+
+    const blockPatterns = findBlockPatterns(blk);
+    console.log(`Block ${blk} has patterns ${blockPatterns}`);
+    //const image = document.querySelector('.image#image-0');  // Trying to remember current state of display for traits
+    //console.log('noTraits:', noTraits);
+
+    console.log('is1214', is1214);
+    
+    if (is1214 === true) {
+
+        const textElement = textContainer;
+        textContainer.style.display = 'block'; 
+        console.log('textElement:', textElement);
+
+        const messages = ["Happy Ordinals Day!", "DIA DE LOS PIXELES", `marks the ${getAnniversary(nowDate)}`, "of the first ordinal inscription,", "and the beginning of the", "decentralized information age.", "LFG!"];
+        let currentMessage = 0;
+
+        function typeWriterEffect(message, callback) {
+            textElement.classList.remove('fade-out');
+            textElement.textContent = '';
+            textElement.classList.add('typewriter');
+            textElement.textContent = message;
+
+            setTimeout(() => {
+            textElement.classList.remove('typewriter');
+            callback();
+            }, 5000);
+        }
+
+        function fadeOutEffect(callback) {
+            textElement.classList.add('fade-out');
+            setTimeout(() => {
+            callback();
+            }, 2000);
+        }
+
+        function startAnimationSequence() {
+            typeWriterEffect(messages[currentMessage], () => {
+                fadeOutEffect(() => {
+                    currentMessage = (currentMessage + 1) % messages.length;
+                    startAnimationSequence();
+                });
+            });
+        }
+
+        function getOrdinalSuffix(n) {
+            const s = ["th", "st", "nd", "rd"],
+            v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        function getAnniversary(now) {
+            const year = now.getFullYear();
+            console.log('year', year);
+            const baseYear = 2022;
+            const diff = year - baseYear;
+
+            if (diff <= 0) {
+            return "Invalid date: Year must be greater than 2022";
+            }
+
+            return getOrdinalSuffix(diff) + " anniversary";
+}
+
+        // Start the animation sequence
+        startAnimationSequence();
+
+        const mrCanvas = document.getElementById('matrixRainCanvas');
+        mrCanvas.style.zIndex = 9;
+    } else {
+        textContainer.style.display = 'none'; // Set display to none
+
+        const mrCanvas = document.getElementById('matrixRainCanvas');
+        mrCanvas.style.zIndex = 1;
+    }
+}
+
+function reverseDigits(block) {
+    const blockStr = block.toString();
+    const reversedArray = blockStr.split('').reverse();
+    const reversedDigits = reversedArray.map(char => parseInt(char));
+    return reversedDigits;
+}
+
+function playSound(soundId, volume, id = 'myAudio') {
+if (jsonColorData && jsonColorData.sounds && jsonColorData.sounds[soundId]) {
+    console.log(`Playing sound ${soundId} with volume ${volume}`);
+    
+    console.log(`Audio element ${id}`);
+    const audioPath = `https://ordinals.com/content/${jsonColorData.sounds[soundId].id}`;
+    const audio = document.getElementById(id);
+
+    // If the audio is already playing, pause it first
+    if (!audio.paused) {
+    audio.pause();
+    }
+
+    // Update the audio element with the new source and volume
+    audio.src = audioPath;
+    audio.volume = volume;
+    audio.currentTime = 0;
+    
+    // Play the audio
+    audio.play().catch(error => console.error("Audio play failed:", error));
+} else {
+    console.error(`Invalid sound ID or missing sound data: ${soundId}`);
+}
+}
+
+function initBackground(backgrounds, dna, isFirst = true) {
+    try {
+        const canvas = backgroundCanvas;
+            const ctx = canvas.getContext('2d');
+
+        // Making the canvas full screen
+        canvas.width = 600;
+        canvas.height = 600;
+
+        let dnaSeed = (dna[0] * 100 + dna[1] * 10 + dna[2]) / 1000;
+        const dnaRandom = Math.floor((Math.random() + 2 * dnaSeed) / 3 * backgrounds.length);
+        const firstStops = [
+            { offset: 0, color: backgrounds[dna[3]] },
+            { offset: 0.5, color: backgrounds[dna[4]] },
+            { offset: 1, color: backgrounds[dna[5]] }
+        ];
+        const otherStops = [
+            { offset: 0, color: backgrounds[dnaRandom % backgrounds.length] },
+            { offset: 0.5, color: backgrounds[(dnaRandom + 1) % backgrounds.length] },
+            { offset: 1, color: backgrounds[(dnaRandom + 2) % backgrounds.length] }
+        ];
+
+        if (isFirst && dnaSeed < 0.01) {
+            ctx.fillStyle = backgrounds[0];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (dnaSeed < 0.30) {
+            ctx.fillStyle = isFirst ? backgrounds[Math.floor(dnaSeed * backgrounds.length)] : backgrounds[dnaRandom];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (dnaSeed < 0.60) {
+            const radialGradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2);
+            const stops = isFirst ? firstStops : otherStops;
+            stops.forEach(stop => radialGradient.addColorStop(stop.offset, stop.color));
+            ctx.fillStyle = radialGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+            const linearGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            const stops = isFirst ? firstStops : otherStops;
+            stops.forEach(stop => linearGradient.addColorStop(stop.offset, stop.color));
+            ctx.fillStyle = linearGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        const newBackgroundImage = new Image();
+        newBackgroundImage.src = canvas.toDataURL();
+        //console.log('newBackgroundImage', newBackgroundImage);
+
+        return newBackgroundImage;
+
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function applyGlitchEffectOnSVG(svgElement, elements) {
+    // console.log('svgElement:', svgElement);
+    const glitchEffects = [
+        () => {
+            svgElement.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+        },
+        () => {
+            svgElement.style.transform = `translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`;
+        },
+        () => {
+            if (Math.random() < 0.3) { // 
+                svgElement.style.opacity = `${0.7 + Math.random() * 0.3}`; 
+            } else {
+                svgElement.style.opacity = `1`; 
+            }
+        }
+    ];
+
+    const applyRandomEffect = () => {
+        glitchEffects[Math.floor(Math.random() * glitchEffects.length)]();
+    };
+
+    let glitchInterval;
+
+    elements.forEach(element => {
+        //console.log(element);
+        // Perform operations on each element
+        element.addEventListener('mouseenter', () => {
+            glitchInterval = setInterval(applyRandomEffect, 200); 
+            if (entries===0) playSound(1,0.5,'myAudio2');
+        });
+
+        element.addEventListener('mouseleave', () => {
+            clearInterval(glitchInterval);
+            const svgElement = document.querySelector('.thirdEye');
+            svgElement.style.filter = '';
+            svgElement.style.transform = '';
+            svgElement.style.opacity = '';
+        });
+    });
+}
+
+function calculateGematria(block, limit = 10) {
+    
+    const blockString = block.toString();
+    let sumDigits = blockString.split('').reduce((sum, digit) => sum + parseInt(digit), 0);
+    
+    // Reduce the sum to a two-digit number
+    while (sumDigits >= 100) {
+        sumDigits = sumDigits.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
+    }
+    return sumDigits;
+}
+
+function findBlockPatterns(block) {
+    const blockStr = block.toString();
+    const patterns = [];
+    const digits = '0123456789';
+    const multiples = [11, 12, 13, 14, 15, 16, 17, 18, 19, 33, 69];
+
+    // Check repeating digits
+    for (let i = 0; i < digits.length; i++) {
+        const digit = digits[i];
+        const repeat3 = new RegExp(`${digit}{3}`);
+        const repeat4 = new RegExp(`${digit}{4}`);
+        const repeat5 = new RegExp(`${digit}{5}`);
+        
+        if (repeat3.test(blockStr)) patterns.push(`repeat_3_${digit}`);
+        if (repeat4.test(blockStr)) patterns.push(`repeat_4_${digit}`);
+        if (repeat5.test(blockStr)) patterns.push(`repeat_5_${digit}`);
+    }
+
+    // Check palindromes
+    for (let i = 0; i <= blockStr.length - 5; i++) {
+        const substr5 = blockStr.substring(i, i + 5);
+        if (substr5 === substr5.split('').reverse().join('')) {
+            patterns.push('palindrome_5');
+            break;
+        }
+    }
+    for (let i = 0; i <= blockStr.length - 6; i++) {
+        const substr6 = blockStr.substring(i, i + 6);
+        if (substr6 === substr6.split('').reverse().join('')) {
+            patterns.push('palindrome_6');
+            break;
+        }
+    }
+
+    // Check multiples
+    multiples.forEach(multiple => {
+        if (block % multiple === 0) {
+            patterns.push(`multiple_${multiple}`);
+        }
+    });
+
+    // Check for 420
+    if (blockStr.includes('420')) {
+        patterns.push('contains_420');
+    }
+
+    // Check for perfect squares
+    const checkPerfectSquare = (numStr) => {
+        const num = parseInt(numStr);
+        const sqrt = Math.sqrt(num);
+        return sqrt === Math.floor(sqrt);
+    };
+    
+    for (let i = 0; i <= blockStr.length - 4; i++) {
+        const substr4 = blockStr.substring(i, i + 4);
+        if (checkPerfectSquare(substr4)) {
+            patterns.push('perfect_square_4');
+            break;
+        }
+    }
+
+    for (let i = 0; i <= blockStr.length - 5; i++) {
+        const substr5 = blockStr.substring(i, i + 5);
+        if (checkPerfectSquare(substr5)) {
+            patterns.push('perfect_square_5');
+            break;
+        }
+    }
+
+    return patterns;
+}
+
+function initMatrixRain(speedFactor, phrases, randomize) {
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'matrixRainCanvas';
+    newCanvas.style.position = 'absolute';
+    newCanvas.style.top = '0';
+    newCanvas.style.left = '0';
+    newCanvas.style.width = '100%';
+    newCanvas.style.height = '100%';
+    newCanvas.style.zIndex = '1';
+    newCanvas.style.pointerEvents = 'none';
+
+    if (noRain === false && reveal2 ) {
+        newCanvas.style.display = 'block';
+    } else {
+        newCanvas.style.display = 'none';
+    }
+
+    // Replace the existing matrixRainCanvas with the new one
+    const existingCanvas = document.getElementById('matrixRainCanvas');
+    const parentElement = existingCanvas.parentNode;
+    parentElement.replaceChild(newCanvas, existingCanvas);
+
+    const canvas = newCanvas;
+    const context = canvas.getContext('2d');
+
+    // Clear the canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    canvas.width = 600;
+    canvas.height = 600;
+
+    const fontSize = 16;
+    const columns = Math.floor(canvas.width / fontSize);
+    //console.log('columns:',columns);
+    const drops = Array(columns).fill(0).map(() => ({
+    text: randomize ? phrases[Math.floor(Math.random() * phrases.length)] : '',
+    y: 1
+    }));
+
+    // Function to get the next character in the phrase
+    const getNextCharacter = (column) => {
+    if (drops[column].text === '') {
+        drops[column].text = phrases[column % phrases.length];
+    }
+    const char = drops[column].text.charAt(0);
+    drops[column].text = drops[column].text.slice(1) + char;
+    return char;
+    };
+
+    function draw() {
+    context.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.fillStyle = '#0F0';
+    context.font = `${fontSize}px monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = getNextCharacter(i);
+        context.fillText(text, i * fontSize, drops[i].y * fontSize);
+
+        if (drops[i].y * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i].y = 0;
+        }
+        drops[i].y++;
+    }
+    }
+
+    setInterval(draw, 1000 / speedFactor);
+}
+
+// Mock function to map dna[3] to a speed factor
+function getSpeedFactor(dnaValue) {
+    // Example mapping: map dnaValue (0-9) to a speed factor (1-10)
+    return Math.max(1, dnaValue);
+}
+
+async function loadAndModifyPacha(blk,now) {
+    console.log('Load and modify script', blk, now);
+        
+    console.log('blk',blk);
+    updates = 0;
+    gematria = calculateGematria(blk,100);
+    console.log('gematria',gematria);
+    displayImage(blk,colorArrays,updates);
+}
+
+async function main() {
+  try {
+    blockheight = await getBlockheight();
+    console.log('blockheight:', blockheight);
+
+    reveal1 = blockheight > launchBlock + 144 * 3 ? true : false; // 3 days 
+    reveal2 = blockheight > launchBlock + 144 * 7 ? true : false; // 7 days
+    console.log('blockheight:',blockheight)
+    console.log('reveal1',reveal1);
+    console.log('reveal2',reveal2);
+ 
+    // Check no mint provided
+    if(mintText.includes('MINT_INSCRIPTION_ID')) {
+        let input1 = document.getElementById('input1')
+        input1.style.display = 'block'
+        input1.style.position = 'absolute'
+        input1.style.fontSize = '20px'
+        input1.style.margin = '20px'
+        input1.style.top = '0'
+        input1.value = blk
+
+        input1.addEventListener('input',(event) => {
+            console.log('Input1', input1.value);
+            blk = input1.value
+            inputChanged = true;
+            loadAndModifyPacha(blk,now);
+        })
+
+        let input2 = document.getElementById('input2')
+        input2.style.display = 'block';
+        input2.style.position = 'absolute';
+        input2.style.fontSize = '20px';
+        input2.style.margin = '20px';
+        input2.style.top = '40';
+        input2.value = nowDate.toISOString().slice(0, 16);
+
+        input2.addEventListener('input',(event) => {
+            console.log('Input2', input2.value);
+            nowDate = new Date(input2.value);
+            now = nowDate.getTime();
+            blockheight = estimateBlockHeight(now);
+            reveal1 = blockheight > launchBlock + 144 * 3 ? true : false;
+            reveal2 = blockheight > launchBlock + 144 * 7 ? true : false;
+            is1214 = isDDLP(now);
+            loadAndModifyPacha(blk,now);
+        })
+        loadAndModifyPacha(blk,now);
+    }
+    // Mint was provided
+    else {
+        const request = new XMLHttpRequest()
+        try {
+        //request.open('GET', '/content/' + mintText); //REPLACE
+        request.open('GET', 'https://ordinals.com/content/' + mintText); //REPLACE
+        request.responseType = 'text';
+        request.addEventListener('load', () => initialize(request.response));
+        request.addEventListener('error', () => console.error('XHR error'));
+        request.send();
+        } catch (error) {
+        console.error(`XHR error ${request.status}`);
+        }
+    }
+} catch (error) {
+    console.error('Error getting block height:', error);
+  }
+}
+
+async function getMetadata(url, retry = false) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        if (!retry) {
+            const timestamp = Math.floor(Date.now() / (60000 * 10)); // 10 minutes
+            const newUrl = `${url}?timestamp=${timestamp}`;
+            console.log(`Retrying with new URL: ${newUrl}`);
+            return getMetadata(newUrl, true);
+        }
+        throw error;
+    }   
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log('DOMContentLoaded');
+
+    // Create background canvas
+    backgroundCanvas = document.createElement('canvas');
+    backgroundCanvas.id = 'backgroundCanvas';
+    backgroundCanvas.style.position = 'absolute';
+    backgroundCanvas.style.top = '0';
+    backgroundCanvas.style.left = '0';
+    backgroundCanvas.style.width = '100%';
+    backgroundCanvas.style.height = '100%';
+    backgroundCanvas.style.zIndex = '0';
+    outerContainer.appendChild(backgroundCanvas);
+    //console.log('backgroundCanvas appended:', backgroundCanvas);
+
+    /**
+    if (!isTouchDevice) {    
+        //console.log('background no touch:',backgroundCanvas);
+        backgroundCanvas.addEventListener('click', () => {
+            console.log('background clicked',event);
+            displayImage(blk, colorArrays, updates,false); 
+            playSound(7,1);
+            updates++;
+        });
+    }
+    ***/
+
+    poseCanvas = document.createElement('canvas');
+    poseCanvas.id = 'poseCanvas';
+    poseCanvas.style.position = 'absolute';
+    poseCanvas.style.top = '0';
+    poseCanvas.style.left = '0';
+    poseCanvas.style.width = '100%';
+    poseCanvas.style.height = '100%';
+    poseCanvas.style.zIndex = '2';
+    outerContainer.appendChild(poseCanvas);
+
+    // Create a container for the PFP
+    pfpContainer = document.createElement('div');
+    pfpContainer.style.display = 'none';
+    pfpContainer.style.position = 'fixed';
+    pfpContainer.style.top = '50%';
+    pfpContainer.style.left = '50%';
+    pfpContainer.style.transform = 'translate(-50%, -50%)';
+    pfpContainer.style.zIndex = '9999';
+    document.body.appendChild(pfpContainer);
+
+    // Create a canvas for the PFP
+    pfpCanvas = document.createElement('canvas');
+    pfpCanvas.width = 600;
+    pfpCanvas.height = 600;
+    pfpCtx = pfpCanvas.getContext('2d');
+    pfpContainer.appendChild(pfpCanvas);
+
+    window.addEventListener('focus', () => {
+        console.log('focus');
+        backgroundCanvas.focus();
+    });
+
+    window.addEventListener('keyup', (event) => {
+        if (event.key === 'r') {
+            const rain = document.querySelector('#matrixRainCanvas');
+            //console.log('rain:', rain);
+            if (rain) {
+                const display = rain.style.display === 'none' ? 'block' : 'none';
+                rain.style.display = display;
+                backgroundCanvas.focus();
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 'h') {
+            const input1 = document.querySelector('#input1');
+            const input2 = document.querySelector('#input2');
+            if (input1 && input2) {
+                const display = input1.style.display === 'none' ? 'block' : 'none';
+                input1.style.display = display;
+                input2.style.display = display;
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 's') {
+            sound = !sound;
+            console.log('sound:',sound);
+            const audioElement = document.querySelector('#myAudio');
+            console.log('audioElement:',audioElement);
+            if (!sound && !!audioElement) {
+                audioElement.pause();
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 'a') {
+            stopAnimations = !stopAnimations;
+            console.log('stopAnimations:',stopAnimations);
+            event.stopImmediatePropagation();
+        }
+    });
+
+    // Create matrix rain canvas
+    matrixRainCanvas = document.createElement('canvas');
+    matrixRainCanvas.id = 'matrixRainCanvas';
+    matrixRainCanvas.style.position = 'absolute';
+    matrixRainCanvas.style.top = '0';
+    matrixRainCanvas.style.left = '0';
+    matrixRainCanvas.style.width = '100%';
+    matrixRainCanvas.style.height = '100%';
+    matrixRainCanvas.style.zIndex = '1';
+    matrixRainCanvas.style.pointerEvents = 'none';
+    outerContainer.appendChild(matrixRainCanvas);
+    console.log('matrixRainCanvas appended:', matrixRainCanvas);  
+
+    // Create a new div element
+    textContainer = document.createElement('div');
+    textContainer.id = 'textContainer';
+    textContainer.classList.add('text-container');
+    outerContainer.appendChild(textContainer);
+
+    // Ensure outerContainer is appended to the body
+    document.body.appendChild(outerContainer);
+    main();
+});
+
+</script>

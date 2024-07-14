@@ -1,0 +1,2117 @@
+<input id="input1" type="number" style="z-index: 10;display:none" />
+<input id="input1" type="number" style="z-index: 10;display:none" />
+<input id="input1" type="number" style="z-index: 10;display:none" />
+<input id="input2" type="datetime-local" style="z-index: 10;display:none" />
+<script id="preview" mint="MINT_INSCRIPTION_ID">
+
+let mintText = document.getElementById('preview').getAttribute('mint')
+let blk = 479808;
+
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
+//const skullUrl = '/content/5230beff8f0246a7f112a410c754b32b87ecb81625372ea2700b413899da2bb4i0';  // CHANGE
+const skullUrl = 'https://ordinals.com/content/5230beff8f0246a7f112a410c754b32b87ecb81625372ea2700b413899da2bb4i0';  // CHANGE
+const launchBlock =  850091;    // CHANGE
+
+let nowDate = new Date(); 
+let is1214 = isDDLP(nowDate);
+//console.log('is1214',is1214);
+const nDisplay = nowDate.toISOString().slice(0, 16);
+let now = nowDate.getTime();
+//console.log('now',now);
+//console.log('nDisplay',nDisplay);
+
+let audioPlaying = false;
+let noTraits = false;
+let noRain = false;
+let sound = true;
+let stopAnimations = false;
+let changes = 0;
+let svgContainer, updates, entries, backgroundCanvas, matrixRainCanvas, textContainer, gematria_1, gematria_2,reaveal1,reveal2, backgrounds, blockPatterns, patternIndex;
+let isFoggy,isBreathing,isGlowing,isShaking,isSpinning,isPulsating,isMouseFollow = false;
+
+let selectedTraits = [];
+let outerContainer = document.createElement('div');
+outerContainer.id = 'outerContainer';
+outerContainer.style.position = 'relative';
+outerContainer.style.width = '600px';
+outerContainer.style.height = '600px';
+outerContainer.style.top = '50%';
+outerContainer.style.left = '50%';
+outerContainer.style.transform = 'translate(-50%, -50%)';
+outerContainer.style.backgroundColor = 'transparent';
+document.body.appendChild(outerContainer);
+
+let audio = document.createElement('audio');
+audio.id = 'myAudio';
+audio.preload = 'auto';
+audio.style.display = 'none';
+document.body.appendChild(audio);
+
+let audio2 = document.createElement('audio');
+audio2.id = 'myAudio2';
+audio2.preload = 'auto';
+audio2.style.display = 'none';
+document.body.appendChild(audio2);
+
+let jsonColorData,colorArrays, soundArrays = [];
+let blockheight;
+
+async function getBlockheight() {
+  const metadata = await getMetadata('https://ordinals.com/r/blockheight');
+  return metadata;
+}
+
+function isDDLP(date) {
+    const givenDate = new Date(date);
+    const year = givenDate.getFullYear();
+    const month = givenDate.getMonth(); // Month is zero-based (0 = January, 11 = December)
+    const day = givenDate.getDate();
+
+    const ddlpDate = new Date(`${year}-12-14T00:00:00-08:00`);
+
+    return (
+        month === ddlpDate.getMonth() &&
+        day === ddlpDate.getDate() &&
+        year === ddlpDate.getFullYear()
+    );
+}
+
+function initialize(result) {
+    if(result) {
+        console.log('initialize', result);
+        data = JSON.parse(result);
+        blk = data.blk;
+        if (data.d) d = data.d;
+    }
+    loadAndModifySkull(blk,now);
+}
+
+const patternToTrait = {
+    'repeat_2_0': 'Bitcoin',
+    'repeat_3_0': 'Crown',
+    'repeat_5_0': 'Stubble',
+    'repeat_2_1': 'Flower',
+    'repeat_3_1': 'Mullet',
+    'repeat_5_1': 'Stubble',
+    'repeat_2_2': 'Glowing',
+    'repeat_3_2': 'Messy',
+    'repeat_4_2': 'Beret',
+    'repeat_5_2': 'Stubble',
+    'repeat_2_3': 'Eye Patch',
+    'repeat_3_3': 'Wavy',
+    'repeat_4_3': 'Bandana',
+    'repeat_5_3': 'Stubble',
+    'repeat_2_4': 'Heart',
+    'repeat_3_4': 'Spikes',
+    'repeat_4_4': 'Spinner',
+    'repeat_5_4': 'Goatee',
+    'repeat_2_5': 'Red/Blue',
+    'repeat_3_5': 'Undercut',
+    'repeat_4_5': 'Cowboy',
+    'repeat_5_5': 'Soul Patch',
+    'repeat_2_6': 'Wide',
+    'repeat_3_6': 'Straight',
+    'repeat_4_6': 'Baseball',
+    'repeat_5_6': 'Soul Patch',
+    'repeat_2_7': 'Wink',
+    'repeat_3_7': 'Swoosh',
+    'repeat_4_7': 'Viking',
+    'repeat_5_7': 'Soul Patch',
+    'repeat_2_8': 'Zombie',
+    'repeat_3_8': 'Messy',
+    'repeat_4_8': 'Cowboy',
+    'repeat_5_8': 'Stubble',
+    'repeat_2_9': 'Glowing',
+    'repeat_3_9': 'Straight',
+    'repeat_5_9': 'Soul Patch',
+    'palindrome_5': 'Hoop',
+    'palindrome_6': 'Diamond',
+    'multiple_7': 'Cigarette',
+    'multiple_11': 'Cigar',
+    'multiple_12': 'Aviator',
+    'multiple_13': 'Cat',
+    'multiple_14': 'Space Explorer',
+    'multiple_15': 'Astronomer',
+    'multiple_16': 'Matrix',
+    'multiple_17': 'Volcano Explorer',
+    'multiple_18': '3D',
+    'multiple_19': 'Space',
+    'multiple_33': 'Starry',
+    'multiple_69': 'Thug Life',
+    'gematria_15': 'Pirate',
+    'gematria_18': 'Captain',
+    'gematria_19': 'Chunky Gold Chain',
+    'gematria_22': 'Wolf',
+    'gematria_25': 'Snaggletooth',
+    'gematria_28': 'Vampire',
+    'gematria_29': 'Gold Tooth',
+    'gematria_38': 'Gold Grill',
+    'gematria_41': 'Fire Fighter',
+    'gematria_42': 'Safety',
+    'gematria_43': 'Polar Explorer',
+    'gematria_44': 'Orange Bead',
+    'gematria_45': 'Beret',
+    'gematria_46': 'Bandana',
+    'gematria_47': 'Mohawk',
+    'contains_108': 'Laser',
+    'contains_108': 'Laser',
+    'contains_420': 'Joint'
+};
+
+const patterns = [
+    {
+        name: "OG",
+        colors: [   // ordinal 0 = OG
+            { color: "dark", paths: ["#base", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX"]},
+            { color: "light", paths: [".nose", ".mouth", ".temple", ".cheek", ".chin", ".mustache", ".forehead", ".eye",".bridge"]}
+        ]
+    },
+
+    {
+        name: "Pale",
+        colors: [   // white skull
+            { color: "light", paths: ["#base", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX"]},
+            { color: "dark", paths: ["#outline", ".nose", ".mouth", ".temple", ".cheek", ".chin", ".mustache", ".forehead", ".eye",".bridge"]}
+        ]
+    },
+    {
+        name: "Blue Multi-Hue",
+        colors: [   // blue multi-hue skull
+            { color: "black", paths: ["#base", "#philtrumGem", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX","#thirdEyeInner"]},
+            { color: "0", paths: [".forehead.thirdeye", ".teeth", "#philtrum", "#bridgeUpperDot", "#bridgeLowerDot", "#bridge", "#noseOutline"]},
+            { color: "1", paths: ["#mustache", ".eye.decor.upper", "#nose", ".cheek.line.four", ".cheek.line.three",".forehead.bullet",".pupil.accent", ".bridge.dot.side","chin.flower.dot","#mouthOutline"]},
+            { color: "2", paths: [".eye.decor.lower", ".nose.under", ".mouthOutline", ".cheek.flower", ".cheek.two",".eye.outer"]},
+            { color: "3", paths: [".cheek.cross", ".cheek.five", "#lowerChinMiddle", ".chin.flower.outer", ".chin.flower.dot",".chin.middle",".temple.decor", ".temple.flower.upper", ".temple.lower.dot"]},
+            { color: "4", paths: [".cheek.one", ".temple.flower.lower", ".forehead.cross", "#forehead", "#lowerChinLeft","#lowerChinRight"]},
+        ]
+    },
+    {
+        name: "Carnival",
+        colors: [   // multi-color skull
+            { color: "black", paths: ["#base", "#philtrumGem", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX","#thirdEyeInner"]},
+            { color: "0", paths: [".eye.decor.upper", "#nose", ".chin.middle",".temple.decor", "#forehead"]},
+            { color: "1", paths: [".forehead.thirdeye", "#mouthOutline",".cheek.five",".temple.lower.dot",".temple.flower.lower",".temple.flower.lower"]},
+            { color: "2", paths: ["#philtrum", "#mustache", ".cheek.line.three", ".cheek.flower", ".cheek.two",".chin.flower.dot",".temple.flower.upper",".forehead.cross"]},
+            { color: "3", paths: ["#bridgeLowerDot", "#bridge", ".cheek.line.four", ".forehead.bullet", ".pupil.accent", ".eye.decor.lower", ".cheek.cross", "#lowerChinMiddle", ".chin.flower.outer",".cheek.one",".chin.lower"]},
+            { color: "4", paths: [".teeth", ".bridge.dot.side", "#bridgeUpperDot", ".nose.under", ".eye.outer" ]},
+            { color: "#ffc20e", paths: ["#tooth1"]} 
+        ]
+    },
+    {
+        name: "Pale and Colors",
+        colors: [   // white skull with colors
+            { color: "light", paths: ["#base", "#philtrumGem", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX","#thirdEyeInner"]},
+            { color: "0", paths: ["#forehead", ".chin.middle","#philtrum","#mustache",".chin.flower.dot","#bridgeLowerDot",".bridge.dot.side", "#bridgeUpperDot",".cheek.four",".cheek.one"]},
+            { color: "1", paths: [".temple.lower.dot",".temple.flower.lower",".temple.flower.lower",".cheek.flower",".forehead.cross",".pupil.accent",".cheek.cross",".chin.flower.outer",".teeth","#noseOutline"]},
+            { color: "2", paths: [".forehead.thirdeye", ".cheek.five",".eye.decor.lower", ".nose.under",  ]},
+            { color: "3", paths: [".eye.decor.upper", ".temple.decor","#mouthOutline",".temple.flower.upper","#bridge",]},
+            { color: "4", paths: [".cheek.line.three",".cheek.two",".forehead.bullet",".chin.lower",".eye.outer" ]},
+            // { color: "background", paths: ["#outline"]}
+        ]
+    },
+    {
+        name: "Azul",
+        colors: [   // light blue skull
+            { color: "dark", paths: [".nose", ".mouth", ".temple", ".cheek", ".chin", ".mustache", ".forehead", ".eye",".bridge"]},
+            { color: "0", paths: ["#base"]},
+            { color: "1", paths: ["#thirdEyeInner",".templeX.flower.dot",".cheekX.dimple",".chinX.dot",".chinX.flower.inner",".noseX.three"]},
+            { color: "2", paths: [".eyeX",".noseX.one",".mustacheX"]},
+            { color: "3", paths: [".noseX.two"]},
+            { color: "4", paths: ["#teethOutline","#noseCross",".eyeX.accent"]}
+        ]
+    },
+    {
+        name: "Trad",
+        colors: [   // multi-color skull II
+            { color: "black", paths: ["#base", "#philtrumGem", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX","#thirdEyeInner"]},
+            { color: "0", paths: ["#forehead","#philtrum",".eye.decor.upper",".cheek.line.three",".bridge.dot.side",".eye.decor.lower",".cheek.two",".chin.middle",".temple.decor",".cheek.one"]},
+            { color: "1", paths: [".teeth","#bridgeUpperDot","#bridgeLowerDot","#bridge",".pupil.accent","chin.flower.dot",".cheek.cross",".cheek.five", ".chin.flower.dot",".forehead.bullet.top",".thirdEye.top"]},
+            { color: "2", paths: ["#thirdEyeOuter",".cheek.line.four","#mouthOutline", ".chin.flower.outer",".forehead.cross",".forehead.bullet.lower",".cheek.flower"]},
+            { color: "3", paths: [".nose.under",".eye.outer",".cheek.five",".nose.under","#mustache",".forehead.bullet.bottom"]},
+            { color: "4", paths: ["#noseOutline", "#lowerChinMiddle",".temple.flower.upper", ".temple.lower.dot",".temple.flower.lower","#lowerChinLeft","#lowerChinRight",".forehead.bullet.middle",".thirdEye.second"]},
+        ]
+    },
+    {
+        name: "Tattoo",
+        colors: [   // multi-color skull III
+            { color: "black", paths: ["#base", "#philtrumGem", ".noseX", ".mouthX", ".templeX",".cheekX",".chinX",".mustacheX",".foreheadX",".eyeX","#thirdEyeInner"]},
+            { color: "white", paths: [".chin.flower.dot"]},
+            { color: "0", paths: ["#forehead",".cheek.line.three",".cheek.two",".teeth","#bridge",".pupil.accent",".cheek.line.four",".nose.under",".temple.lower.dot",".temple.flower.lower", ]},
+            { color: "1", paths: [".chin.middle",".cheek.cross",".cheek.five",".forehead.thirdeye",".forehead.cross",".cheek.five",]},
+            { color: "2", paths: [".eye.decor.upper",".chin.flower.outer",".temple.decor",".eye.decor.lower",".bridge.dot",".temple.flower.upper",]},
+            { color: "3", paths: [".eye.outer","#mustache", ".chin.lower",".cheek.flower","#philtrum",".forehead.bullet"]},
+            { color: "4", paths: [".cheek.one","#mouthOutline","#noseOutline",]},
+        ]
+    }
+];
+
+const traits = [
+    {"inscriptionId": "5a382e1d537f41bfc63eda015b939d7e6f8e83bd8492958a487f32a1766daa37i0",	"trait": "Goatee",	"category": "Beard"},																			
+    {"inscriptionId": "d407c133d5ed7352db91810ad242b7f34e7b44ac3d8b8fac27888c375a2e4c47i0",	"trait": "Soul Patch",	"category": "Beard"},
+    {"inscriptionId": "16bc48f7b57df4298ca268bcd3cf86fb1e2335a12968d7118b73a4c881bbba9bi0",	"trait": "Stubble",	"category": "Beard"},
+    {"inscriptionId": "1c3a6b70c6d2a672a865ad553790900f56bee31fbe75bfa6ee4574709356fa03i0",	"trait": "Space Explorer",	"category": "Clothing"},
+    {"inscriptionId": "960f616f95fed8ec80e04f0df1641275163a222397bd651a2817f6b47dea0ee0i0",	"trait": "Polar Explorer",	"category": "Clothing"},
+    {"inscriptionId": "f3db67734ec0cffc98bc8d5e531567cef1b542f3af8c87d39f129e9104c29e79i0",	"trait": "Astronomer ",	"category": "Clothing"},
+    {"inscriptionId": "8126d5dbd9db4f3b6ee38944cae639b890347517f56f5e8b949092d8e0932dc1i0",	"trait": "Volcano Explorer",	"category": "Clothing"},
+    {"inscriptionId": "58da90b790d690a22333cd8d55faffc69fb89146e7c4bd63a7d85db7d80eaf28i0",	"trait": "Diamond",	"category": "Earrings"},
+    {"inscriptionId": "b6541261e1e2ad3972efb69c54a9294da02b60eed72778808b4782ab56af5a86i0",	"trait": "Hoop",	"category": "Earrings"},
+    {"inscriptionId": "637b73ed597fc1354f6826fceed2ecd81897dc207512965b4d745f8d1d245b43i0",	"trait": "Orange Bead",	"category": "Earrings"},
+    {"inscriptionId": "cecd0ccf47962c1f2df272a981edc3cb185a1f62b1181952750e2256c34d71cei0",	"trait": "Bitcoin",	"category": "Eyes"},
+    {"inscriptionId": "f419a6b8861faa995af1afe9daa5eedcebeab9b154edaf455d39e2c69d25ec89i0",	"trait": "Eye Patch",	"category": "Eyes"},
+    {"inscriptionId": "166367023e90c307d18620b8cddd2a432e3f89ed99a26368b45b930f01caa014i0",	"trait": "Flower",	"category": "Eyes"},
+    {"inscriptionId": "91b55d73526bb752aa51e5aeb86048a60507178280372193fc65ad74accec584i0",	"trait": "Glowing",	"category": "Eyes"},
+    {"inscriptionId": "82cfa60a8def1eca77dd95de8023c0cc72d7433870fab682a171f874168d2604i0",	"trait": "Heart",	"category": "Eyes"},
+    {"inscriptionId": "e57ea1823032c43596a944cf5c080cb760a59ff582d5eecdebad91d7416de8bdi0",	"trait": "Laser",	"category": "Eyes"},
+    {"inscriptionId": "a464d5a43bfa474442f669ea3b68b9df2a9f4297363b147bb70d7c3d7711535fi0",	"trait": "Red/Blue",	"category": "Eyes"},
+    {"inscriptionId": "86c4575a8d679dd2b5b4741935b8974af884dcf52cac60469dc98e9be8b43ae9i0",	"trait": "Wide",	"category": "Eyes"},
+    {"inscriptionId": "2091f38142dc561a0be3003c2090ada870d2e2b27655bda59d247cc798a341d9i0",	"trait": "Wink",	"category": "Eyes"},
+    {"inscriptionId": "2a31e104b0673f1da09f301c7fd4c460efe894d580b2a0635b9b63178290982bi0",	"trait": "Zombie",	"category": "Eyes"},
+    {"inscriptionId": "bb7822bd04b2e2404a9536ac9940b3400cb7959afde51d6a98ed2285cb045329i0",	"trait": "Aviator",	"category": "Glasses"},
+    {"inscriptionId": "a167ce43779ba5f6d8800d0fc798124182c24eb97941eef21580f63c2a5ca3b0i0",	"trait": "Cat",	"category": "Glasses"},
+    {"inscriptionId": "1d8e986129f5d1904fec61d844914ecefa6aa47defdb7abffe2b608d96057987i0",	"trait": "Heart",	"category": "Glasses"},
+    {"inscriptionId": "1638c873ed333cb131428d66e3566723318812163a28acfd10ac3ab746df1d7di0",	"trait": "Hexoganal",	"category": "Glasses"},
+    {"inscriptionId": "392a45d596f6495f441eb31e946665daadc4ea6f2ddf54260d7b184b4003946ci0",	"trait": "Matrix",	"category": "Glasses"},
+    {"inscriptionId": "49c6b470e338cbd5b391e3923334e0d009d72bc044684da979f7c1a94b73ff97i0",	"trait": "Pineapple",	"category": "Glasses"},
+    {"inscriptionId": "d00f4e3be2eb468cb992e8d2f4c8a1b3459639ce839c1bc292794cf5209ad288i0",	"trait": "3D",	"category": "Glasses"},
+    {"inscriptionId": "ca43b288566d3368a680166892f6b8c94077dacf0e14b64a160396c88816e3d4i0",	"trait": "Space Glasses",	"category": "Glasses"},
+    {"inscriptionId": "b3c7740b8e7363a4853e0609ff6afd48b5dac1319634933750dc62e347283bfbi0",	"trait": "Starry",	"category": "Glasses"},
+    {"inscriptionId": "3c3543a2dddcb9d65394845b675bad9b2cfe767d75891a609f9220db95318f31i0",	"trait": "Thug Life",	"category": "Glasses"},
+    {"inscriptionId": "1db7fe8aebeab63c683be7852a73cefee9fbc48e793ca05e2147fc80611c2af3i0",	"trait": "Messy", "category": "Head"},
+    {"inscriptionId": "d8bebb7639b7924ef934abb01b3a6bee6fadf608f3963acb4926984371b8a4b4i0",	"trait": "Mullet", "category": "Head"},
+    {"inscriptionId": "e87b0c303b4334522720ea683028f70da6945df39a4592f24c9a9e93ef104950i0",	"trait": "Spikes", "category": "Head"},
+    {"inscriptionId": "9d1b3cd63cf8fdea6ed585f45688d00e05ea654388364b5e9f3758e2ff77dd9di0",	"trait": "Straight", "category": "Head"},
+    {"inscriptionId": "2a3f97a24c65f9e65ac280df975c1b802b909d22abf31cc5e90ea97f37458310i0",	"trait": "Swoosh", "category": "Head"},
+    {"inscriptionId": "c562b2b335db006003f1317bdd5a2761c05a983158f7957f09985c58e77b4caai0",	"trait": "Undercut", "category": "Head"},
+    {"inscriptionId": "1d29e174a68b4b890312aee8a838073aa3df2d51538346ab00fed7beeb0d6b1bi0",	"trait": "Wavy", "category": "Head"},
+    {"inscriptionId": "6d6b0fc21dd2b3e0bfc8f43204d3c552583b383eeaca9b0a7c80dcace68a2993i0",	"trait": "Bandana",	"category": "Head"},
+    {"inscriptionId": "652b6b26bc7af1b24590dc21bfdb80d801471bcb07dbcb83f68c9f2faf43d944i0",	"trait": "Beret", "category": "Head"},
+    {"inscriptionId": "f65696cea66cbe88bd94eb815ab66f5f7fda66816a1dcc23faf1b4b35d9d0b64i0",	"trait": "Baseball", "category": "Head"},
+    {"inscriptionId": "d03ccb512d69a10717477c7546eeaf8b50c65dfab079c4212cd7f7d73659ffe0i0",	"trait": "Cowboy", "category": "Head"},
+    {"inscriptionId": "aebed9c64863088c9d05dc594e86c9b7cbbbd780b4eca6c1ad3b2869c15025f0i0",	"trait": "Pirate", "category": "Head"},
+    {"inscriptionId": "d1a5c9f60542e0e5f58d37fccb4b393bdf2695638f952a60f851a45439b1d079i0",	"trait": "Captain",	"category": "Head"},
+    {"inscriptionId": "001577fb2666bb937e014f6ad91525f4e58f58ab4870d1ae62758042d94eb479i0",	"trait": "Spinner",	"category": "Head"},
+    {"inscriptionId": "1b1f58f1ecbda14a059305fb93a3dcd1f1c97191b30f236a1e73a415f8196e23i0",	"trait": "Crown", "category": "Head"},
+    {"inscriptionId": "d723ea8ba1cd9d9601fa06bd479acdac9cec83f850df4e63bdf62c5a59f175edi0",	"trait": "Falcon", "category": "Head"},
+    {"inscriptionId": "3bd094f4a1cf19a633cc3146fe30b61dfb8796dcffd2350e798956d7f15d61c3i0",	"trait": "Fire Fighter", "category": "Head"},
+    {"inscriptionId": "504474404aea015766362b78092aed1237011902a8b5c18b9c184f5df913d1e5i0",	"trait": "Safety",	"category": "Head"},
+    {"inscriptionId": "b497215d49a73aef7784a62f6cf6750ef31fde86abcf834ec4040842eca5f730i0",	"trait": "Viking",	"category": "Head"},
+    {"inscriptionId": "cdd86bb328612ea31c976a4643d21b4e4475f651e2a1e5fbcf5bbf5815687035i0",	"trait": "Gold Grill",	"category": "Mouth"},
+    {"inscriptionId": "2c617d31bb05ac84ced348ecba602131da3af99e8cc340b2ec1ae4d4bd03b0ddi0",	"trait": "Gold Tooth",	"category": "Mouth"},
+    {"inscriptionId": "105f63bd355e478b4f58831fb1bcd9ab8a52fa654c6d26cec0b3a5c48335d831i0",	"trait": "Snaggletooth",	"category": "Mouth"},
+    {"inscriptionId": "09416e696a870eeed70dd5d6f52ef746149a5ded86df9382ea2820e3ed943ba0i0",	"trait": "Vampire",	"category": "Mouth"},
+    {"inscriptionId": "9536bf1f98c8562a7a17f474eae273566eacbbb0f3357feb6100e88712cac965i0",	"trait": "Wolf", "category": "Mouth"},
+    {"inscriptionId": "d52f19e7a59d90511c811cdd3aa8143f4351fe3ec1768c7a04631882db50b9fai0",	"trait": "Cigarette", "category": "Cigarette"},
+    {"inscriptionId": "ab487c19dcdf061afc9aee8201e0cb8d1c3c21925cc2472898b588d5f165985ei0",	"trait": "Cigar", "category": "Cigarette"},
+    {"inscriptionId": "81ab85f4e36872a31321d3632e9b2bb8313ebca9b05fe3ee538c5e9a340e170ai0",	"trait": "Joint", "category": "Cigarette"},
+    {"inscriptionId": "51720f5a1e114f943dc20ee64b813c204268b735e269ad2e3d47430fd05b7faai0",	"trait": "Pipe", "category": "Cigarette"},   
+    {"inscriptionId": "752ed7e59074cbe0cd6e3790b0fe78873f324761dc805424239d9c541a298a85i0",	"trait": "Herb Pipe", "category": "Cigarette"},
+    {"inscriptionId": "cb477efeb8930ea2fb5948b4ee7a610e9d8db3d98881df7264dd3c9a4b1e6ecdi0",	"trait": "Chunky Gold Chain", "category": "Necklaces"}
+]
+
+const phraseArray = [
+    ['THE META IS DOT META', 'WEB4 IS THE SPACE ABOVE THE WEBPAGE', 'GOOD MORNING LFG', 'ALL TIME HIGH', 'I GOT A $DOG IN THIS FIGHT','CATCH THE BULL BY THE HORNS','THAT SATS MOVIE GONNA SLAP','THE METAWEB', 'METAWEB PUNKS', 'METAORDINAL THEORY'],
+    ['ORDWEB', 'BITCOIN LAYER OVER THE WEB', 'RELATIVE SPACE', 'META INSCRIPTIONS META BLOCKS META SATOSHIS META BITMAP', 'MEET INTERACT COLLABORATE','PARTY ON AN ORDINAL', 'THE META IS DOT META', 'NOSTR LAYER OVER BITCOIN NATIVE ASSETS', 'LIBRARY OF ALEXANDRIA', 'UNCENSORABLE IMMUTABLE PERMANENT', 'PUBLIC INFORMATION REPOSITORY', 'ROBUST INFORMATION ECOSYSTEM','SATOSHI BROWSER'],
+    ['GOOD MORNING MFER', 'LETS EFFEN GO', 'GEE EM LEGEND', 'LFG LFG LFG', 'LESGO', 'GM GEE EMM', 'GM GM GM GM'],
+    ['010101010101010', '01 01 01 01 01 01 01', '00110011001100', '0 0 000 0 0 000 0 0 000', '1 1 111 1 1 111 1 1 111'],
+    ['BITCOIN BTC', 'BITCOIN NATIVE ASSETS', 'ORDINALS BITCOIN NFTS', 'INSCRIPTIONS DIGITAL ARTIFACTS', 'RUNES', 'SNS HANDLES', 'BITMAP','NAT UNAT DMT', 'SATOSHI SATS', 'SATOSHI NAKAMOTO'],
+    ['DMT DIGITAL MATTER THEORY', 'UNAT READY', 'NAT NON ARBITRARY TOKENS NAT', 'NATCATS NATFROGS NATOWLS', 'ROYALS LOS PIXELES WEB4 PACHA'] 
+]
+const specialPhrases = 
+    ['GM LEGEND', 'ANON ANON ANON', 'DEGEN DEGEN DEGEN', 'DIAMOND HANDS', 'YOU ARE LEGENDARY '];
+
+// CSS Styles
+const styles = `
+@keyframes glow {
+    0% { filter: drop-shadow(0 0 5px rgba(255, 165, 0, 1)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 165, 0, 1)); }
+    100% { filter: drop-shadow(0 0 5px rgba(255, 165, 0, 1)); }
+}
+.glow { animation: glow 1s infinite; }
+
+@keyframes pulsate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+}
+.pulsate { animation: pulsate 1s infinite; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-0.3px); }
+    75% { transform: translateX(0.3px); }
+}
+.shake { animation: shake 0.5s infinite; }
+
+@keyframes breathing {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.005); }
+    100% { transform: scale(1); }
+}
+.breathing { animation: breathing 2s infinite; }
+
+@keyframes fog {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+.fog { animation: fog 3s infinite; }
+
+.spinning {
+  animation: spin 2s infinite linear;
+}
+
+.spinning-reverse {
+  animation: spin-reverse 2s infinite linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-reverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.text-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-container * {
+  font-size: inherit;
+}
+
+.text {
+  font-family: 'Press Start 2P', cursive; /* Pixelated font */
+  font-size: 2rem;
+  color: #fff;
+  margin: 20px;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 0.15em solid #fff; /* White cursor */
+  animation: typewriter 4s steps(40, end) 1s 1 normal both, blink 1s step-end infinite alternate;
+  color: #fff; /* White text */
+  font-size: 2rem;
+}
+
+.fade-out {
+  animation: fadeOut 2s forwards;
+}
+`;
+
+// Append the styles to the head
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
+
+function applyGlow(svgElement, duration) {
+    svgElement.style.animationDuration = duration + 's';
+    svgElement.classList.add('glow');
+    //console.log('svgElement(applyGlow):',svgElement);
+}
+
+function applyPulsatingGlow(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('pulsate');
+}
+
+function mouseFollow(svgElement) {
+    document.addEventListener('mousemove', (event) => {
+        //console.log('svgElement(mouseFollow):',svgElement);
+        const rect = svgElement.getBoundingClientRect();
+        const eyeX = rect.left + rect.width / 2;
+        const eyeY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - eyeY, event.clientX - eyeX);
+        const x = Math.cos(angle) * 1;
+        const y = Math.sin(angle) * 1;
+        svgElement.setAttribute('transform', `translate(${x}, ${y})`);
+    });
+}
+
+function applyShaking(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('shake');
+}
+
+function applyBreathing(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('breathing');
+}
+
+function applyFog(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('fog');
+}
+
+function estimateBlockHeight(targetDate) {
+    // Block height at June 12, 2024 at 9:28 PDT
+    const referenceBlockHeight = 847642;
+    const referenceDate = new Date('2024-06-12T16:28:00Z'); // Convert to UTC
+
+    // Average block time in minutes
+    const averageBlockTimeMinutes = 10;
+
+    // Calculate the time difference in minutes
+    const timeDifferenceMinutes = (targetDate - referenceDate) / 60000;
+
+    // Estimate the block height
+    const estimatedBlockHeight = Math.floor(referenceBlockHeight + (timeDifferenceMinutes / averageBlockTimeMinutes));
+
+    return estimatedBlockHeight;
+}
+
+function convertBlockPatternsToTraits(patterns, updates) {
+    //console.log('updates:',updates);
+    const categoryMap = {};
+
+    // First, categorize the traits
+    for (const pattern of patterns) {
+        const trait = patternToTrait[pattern];
+        const matchingTrait = traits.find(t => t.trait === trait);
+
+        if (matchingTrait) {
+            const category = matchingTrait.category;
+
+            if (!categoryMap[category]) {
+                categoryMap[category] = [];
+            }
+
+            categoryMap[category].push({ pattern, ...matchingTrait });
+        }
+    }
+
+    // Now handle categories with more than one trait
+    selectedTraits = [];
+
+    for (const category in categoryMap) {
+        const traitsInCategory = categoryMap[category];
+
+        if (traitsInCategory.length > 1) {
+            const selectedIndex = updates % traitsInCategory.length;
+            const selectedTrait = traitsInCategory[selectedIndex];
+            selectedTraits.push(selectedTrait);
+        } else {
+            selectedTraits.push(traitsInCategory[0]);
+        }
+    }
+
+    // Sort the selected traits based on their pattern order in patternToTrait
+    selectedTraits.sort((a, b) => {
+        const aIndex = Object.keys(patternToTrait).indexOf(a.pattern);
+        const bIndex = Object.keys(patternToTrait).indexOf(b.pattern);
+        return aIndex - bIndex;
+    });
+
+    // Extract and return the inscription IDs
+    console.log('selectedTraits:',selectedTraits);
+    return selectedTraits.map(trait => trait.inscriptionId);
+}
+
+function generateCenteredGradations(hex, gradations) {
+    const { h, s, l } = hexToHsl(hex);
+    const gradationArray = [];
+    const step = 40 / (gradations - 1); // Determine the step size based on the number of gradations
+
+    for (let i = 0; i < gradations; i++) {
+        const newL = Math.min(Math.max(l + (i * step) - 20, 0), 100); // Ensure the new lightness value is within bounds
+        gradationArray.push(hslToHex({ h, s, l: newL }));
+    }
+
+    return gradationArray;
+}
+
+function rgbToHex(r, g, b) {
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+function hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(x => x + x).join('');
+    }
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return { r, g, b };
+}
+
+function hexToHsl(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case rNorm: h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+            case gNorm: h = (bNorm - rNorm) / d + 2; break;
+            case bNorm: h = (rNorm - gNorm) / d + 4; break;
+        }
+        h *= 60;
+    }
+
+    return { h, s: s * 100, l: l * 100 };
+}
+
+function hslToHex(hsl) {
+    const { h, s, l } = hsl;
+    const sNorm = s / 100;
+    const lNorm = l / 100;
+
+    const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = lNorm - c / 2;
+    let r = 0, g = 0, b = 0;
+
+    if (0 <= h && h < 60) {
+        r = c; g = x; b = 0;
+    } else if (60 <= h && h < 120) {
+        r = x; g = c; b = 0;
+    } else if (120 <= h && h < 180) {
+        r = 0; g = c; b = x;
+    } else if (180 <= h && h < 240) {
+        r = 0; g = x; b = c;
+    } else if (240 <= h && h < 300) {
+        r = x; g = 0; b = c;
+    } else if (300 <= h && h < 360) {
+        r = c; g = 0; b = x;
+    }
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+// Main Function
+
+function generateHexColor(dnaArray, polarity) {
+    if (!Array.isArray(dnaArray) || dnaArray.length < 5 || dnaArray.length > 6) {
+        console.error('Invalid DNA array. Expected an array of 5 or 6 digits:', dnaArray);
+        return '';
+    }
+    if (typeof polarity !== 'number' || (polarity !== 0 && polarity !== 1)) {
+        console.error('Invalid polarity. Expected 0 or 1:', polarity);
+        return '';
+    }
+
+    const firstTwoDigits = parseInt(dnaArray.slice(0, 2).join(''), 10);
+
+    // Generate base color using HSL and convert to hex
+    const baseHsl = {
+        h: firstTwoDigits % 360, // Ensure hue is within 0-359 degrees
+        s: 100, // Maximum saturation
+        l: 50  // Neutral lightness
+    };
+
+    const baseHex = hslToHex(baseHsl);
+
+    // Adjust lightness based on polarity
+    const adjustedHsl = { 
+        ...baseHsl, 
+        l: polarity === 0 ? Math.max(baseHsl.l - 40, 0) : Math.min(baseHsl.l + 40, 100) 
+    };
+
+    // Convert adjusted HSL back to hex
+    const adjustedHex = hslToHex(adjustedHsl);
+
+    return adjustedHex;
+}
+
+function getColor(color, colorArray, dna) {
+    //console.log(`getColor called with color: ${color} and colorArray: ${colorArray}`);
+
+    if (blockPatterns.includes('power_of_7_3')) {
+            return 'gold';
+    } else if (blockPatterns.includes('power_of_7_4')) {
+            return 'orange';
+    } else if (blockPatterns.includes('power_of_7_5')) {
+            return 'green';
+    } else if (blockPatterns.includes('power_of_7_6')) {
+            return 'purple';
+    } else if (color === 'dark') {
+        if (blockPatterns.includes('gematria_8') === 8) {
+            return '#000';
+        } else {
+            return generateHexColor(dna, 0)
+        }
+    } else if (color === 'light') {
+        if (blockPatterns.includes('gematria_8') === 8 ) {
+            return '#FFF';
+        } else {
+            return generateHexColor(dna, 1)
+        }
+    } else if (color === 'white') {
+        return '#FFF';
+    } else if (color === 'black') {
+        return '#000000';
+    } else if (!isNaN(parseInt(color))) {
+        return colorArray[parseInt(color)];
+    } else {
+        try {
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            return `rgb(${r},${g},${b})`;
+        } catch (e) {
+            return `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`;
+        }
+    }   
+}
+
+function applyPattern(patternIndex, svgContainer, dna, colorArrays) {
+    console.log(`applyPattern called with patternIndex: ${patternIndex} and dna: ${dna}`);
+    //console.log('colorArrays:', colorArrays);
+    const pattern = patterns[patternIndex];
+
+    let colorArray = [];
+    if (blockPatterns.includes('gematria_8')) {    // classic
+        if (patternIndex === 2) {
+            colorArray = generateCenteredGradations('#267DD0', 5);  
+        } else if (patternIndex > 2) {
+            colorArray = colorArrays[patternIndex];
+        } 
+    } else {
+        if (patternIndex === 2) {
+            //console.log('dna[0]',dna[0]);
+            //console.log('primary color',colorArrays[dna[1]%3][dna[2]]); 
+            const baseColor = backgrounds[blk % backgrounds.length];          
+            colorArray = generateCenteredGradations(baseColor, 5);
+        } else if (patternIndex > 2) {
+            // rarity based coloring
+            if (blk.toString().includes('1089')) 
+                colorArray = colorArrays[(blk+blockheight) % 9];
+            else {
+                //console.log('blk',blk);
+                colorArray = colorArrays[blk % 9];  
+            }
+        } 
+    } 
+
+    //console.log('colorArray (before reordering):', colorArray);
+    colorArray = reorderColors(colorArray, dna);
+    //console.log('colorArray (after reordering):', colorArray);
+
+    pattern.colors.forEach(colorSet => {
+        colorSet.paths.forEach(pathSelector => {
+            //console.log(`Selecting paths with selector: ${pathSelector}`);
+            try {
+                const paths = svgContainer.querySelectorAll(pathSelector);
+                //console.log(`Found ${paths.length} paths for selector ${pathSelector}`);
+                paths.forEach(path => {
+                    const color = getColor(colorSet.color, colorArray, dna);
+                    //console.log(`Applying color ${color} to path`, path);
+                    path.style.stroke = color;
+                });
+            } catch (e) {
+                console.error(`Error selecting paths with selector ${pathSelector}:`, e);
+            }
+        });
+    });
+}
+
+function fetchSVG(url) {
+    return fetch(url)
+        .then(response => response.text())
+        .then(svgContent => {
+            svgContainer.style.visibility = 'visible';
+            if (svgContainer) {
+                svgContainer.innerHTML = svgContent;
+            } else {
+                const newContainer = document.createElement('div');
+                newContainer.id = 'svgContainer';
+                newContainer.innerHTML = svgContent;
+                document.body.appendChild(newContainer);
+            }
+            return svgContainer;
+        });
+}
+
+function blockPatternExists(blockPatterns, pattern) {
+  return blockPatterns.includes(pattern);
+}
+
+function applyAnimations(svgContainer, blockPatterns) {
+    let isFoggy = blockPatternExists(blockPatterns,'perfect_square_4');
+    let isBreathing = blockPatternExists(blockPatterns,'gematria_3');
+    let isGlowing = blockPatternExists(blockPatterns,'gematria_1');
+    let isShaking = blockPatternExists(blockPatterns,'perfect_square_6');
+    let isSpinning = blockPatternExists(blockPatterns,'fibonacci_3');
+    let isPulsating = blockPatternExists(blockPatterns,'repeat_4_9');
+    let isMouseFollow = blockPatternExists(blockPatterns,'perfect_square_3');
+    let eyesSpinning = blockPatternExists(blockPatterns,'fibonacci_4');
+    let pupilsSpinning = blockPatternExists(blockPatterns,'perfect_square_5');
+    let cheekSpinning = blockPatternExists(blockPatterns,'fibonacci_6');
+    let chinSpinning = blockPatternExists(blockPatterns,'repeat_4_0');
+    let thirdEyeSpinning = blockPatternExists(blockPatterns,'repeat_4_1');
+    if (blockPatternExists(blockPatterns,'fibonacci_5')) {
+        eyesSpinning = true;
+        pupilsSpinning = true;
+    }   
+    
+    if (!stopAnimations) {
+        const spinningElements = svgContainer.querySelectorAll('.bullet');
+        //console.log('applying spinning to', spinningElements);
+        if (isSpinning) {
+            spinningElements.forEach(element => {
+                element.classList.add('spinning');
+                if (element.classList.contains('left')) {
+                    element.style.transformOrigin = '37.5% 20%';
+                } else {
+                    element.style.transformOrigin = '61.5% 20%';
+                }
+            });
+        }
+        
+        const shakingElement = svgContainer.querySelector('#bridge');
+        //console.log('applying shaking to', shakingElement);
+        if (isShaking && shakingElement) {
+            applyShaking(shakingElement, 1);
+        }
+
+        const pulsatingElement = svgContainer.querySelector('#philtrumGem');
+        //console.log('applying pulsating to', pulsatingElement);
+        if (isPulsating && pulsatingElement) {
+            applyPulsatingGlow(pulsatingElement, 1);
+        }
+
+        const glowingElement = svgContainer.querySelector('#thirdEyeInner');
+        //console.log('applying glow to', glowingElement);
+        if (isGlowing && glowingElement) {
+            applyGlow(glowingElement, 2);
+        }
+
+        const breathingElements = document.querySelectorAll('.temple.flower');
+        //console.log('breathingElements',breathingElements);
+        if (isBreathing) {   
+            breathingElements.forEach(element => {
+                applyBreathing(element, 2);
+            });
+        }
+        
+        const fogElement = document.querySelector('#backgroundCanvas');
+        //console.log('fogElement',fogElement);
+        if (isFoggy && fogElement) {
+            applyFog(fogElement, 10);
+        };
+
+        const followElements = document.querySelectorAll('.pupil.accent');
+        //console.log('followElements',followElements);
+        if (isMouseFollow) {
+            followElements.forEach(element => {
+                mouseFollow(element);
+            });
+        };
+
+        if (pupilsSpinning) {
+            followElements.forEach(element => {
+                element.classList.add('spinning');
+                if (element.classList.contains('left')) {
+                    element.style.transformOrigin = '34.5% 38.5%';
+                } else {
+                    element.style.transformOrigin = '64.7% 38.7%';
+                }
+            });
+        }
+
+        const eyeElements = document.querySelectorAll('.eyeX');
+        if (eyesSpinning) {
+            //console.log('eye spinning');
+            eyeElements.forEach(element => {
+                element.classList.add('spinning-reverse');
+                if (element.classList.contains('left')) {
+                    element.style.transformOrigin = '34.5% 38.5%';
+                } else {
+                    element.style.transformOrigin = '64.7% 38.7%';
+                }
+            });
+        }
+
+        const cheekElements = document.querySelectorAll('.cheek.flower');
+        if (cheekSpinning) {
+            //console.log('cheek spinning');
+            cheekElements.forEach(element => {
+                element.classList.add('spinning-reverse');
+                if (element.classList.contains('left')) {
+                    element.classList.add('spinning-reverse');
+                    element.style.transformOrigin = '23.1% 58.5%';
+                } else {
+                    element.classList.add('spinning');
+                    element.style.transformOrigin = '76% 58.3%';
+                }
+            });
+        }
+
+        const chinElements = document.querySelectorAll('.chin.flower');
+        if (chinSpinning) {
+            //console.log('chin spinning');
+            chinElements.forEach(element => {
+                if (element.classList.contains('left')) {
+                    element.classList.add('spinning-reverse');
+                    element.style.transformOrigin = '34.5% 38.5%';
+                } else {
+                    element.classList.add('spinning');
+                    element.style.transformOrigin = '64.7% 38.7%';
+                }
+            });
+        }
+        
+        const element = document.querySelector('#thirdEyeInner');
+        if (thirdEyeSpinning) {
+            //console.log('thirdEye spinning');
+            if (Math.random() > 0.5) {
+                element.classList.add('spinning-reverse');
+            } else {
+                element.classList.add('spinning');
+            }
+            element.style.transformOrigin = '50% 19.7%';
+        } 
+    }    
+}
+
+function displaySVG(skullUrl, blk, colorArrays, svgContainer, updates, isFirst = true) {
+    //console.log('svgContainer:',svgContainer);
+
+    if (outerContainer) {
+        const children = Array.from(outerContainer.children);
+        children.forEach(child => {
+            if (child.tagName.toLowerCase() === 'img') {
+                outerContainer.removeChild(child);
+            }
+        });
+        //console.log('Image elements removed');
+    } else {
+        console.error('outerContainer not found');
+    }
+
+    fetchSVG(skullUrl).then(svgContainer => {
+        entries = 0;
+        const svgElements = svgContainer.querySelectorAll('svg');
+        svgElements.forEach(svg => {
+            svg.style.pointerEvents = 'auto';
+        });
+        setupEventHandler(svgContainer);
+
+        gematria_1 = doGematria(blk);
+        gematria_2 = doGematria(blk, 100);
+        console.log('gematria_1', gematria_1);
+        console.log('gematria_2', gematria_2);
+
+        if (gematria_2 >= 12 && gematria_2 <=16) patternIndex = 2;
+        else if (gematria_2 >= 17 && gematria_2 <=20) patternIndex = 0; 
+        else if (gematria_2 >= 21 && gematria_2 <=23) patternIndex = 2; 
+        else if (gematria_2 >= 24 && gematria_2 <=26) patternIndex = 5;
+        else if (gematria_2 >= 27 && gematria_2 <=30) patternIndex = 3;
+        else if (gematria_2 >= 31 && gematria_2 <=34) patternIndex = 1;
+        else if (gematria_2 >= 35 && gematria_2 <=38) patternIndex = 7;
+        else if (gematria_2 >= 39 && gematria_2 <=48) patternIndex = 4;
+        else if (gematria_2 >= 49 && gematria_2 <=53) patternIndex = 6;
+        else if (gematria_2 >= 54 && gematria_2 <=58) patternIndex = 1;
+        else if (gematria_2 >= 59 && gematria_2 <=63) patternIndex = 7;
+        else if (gematria_2 >= 64 && gematria_2 <=68) patternIndex = 4;
+        else if (gematria_2 >= 69) patternIndex = 3;
+
+        blockPatterns = findBlockPatterns(blk);
+        console.log('Block', blk);
+        console.log('blockPatterns',blockPatterns);
+
+        const reverseBlock = reverseDigits(blk);
+        backgrounds = colorArrays[8];
+        initBackground(svgContainer, reverseBlock, isFirst);
+
+        const speedFactor = getSpeedFactor(reverseBlock[3]);
+        console.log('blockheight:', blockheight);
+        //console.log('phraseArray:', phraseArray);
+        let phrases = phraseArray[blockheight % phraseArray.length];
+
+        console.log('patternIndex',patternIndex);
+        applyPattern(patternIndex, svgContainer, reverseBlock, colorArrays);
+
+        //console.log('reveal1', reveal1)
+        
+        if (blockPatternExists(blockPatterns,'contains_321')) phrases = specialPhrases;
+        //console.log('phrases:',phrases);
+        const randomize = true; // Set to false to display phrases in a row
+        const displayRain = blockheight % (gematria_1 +2) === 0; 
+        //console.log('displayRain', displayRain);
+        //console.log('blockheight',blockheight);
+    
+        //console.log('reveal2', reveal2)
+        if (!noRain && reveal2 && displayRain) {
+            initMatrixRain(speedFactor, phrases, randomize);
+            matrixRainCanvas.style.display = 'block';
+        } else {
+            //console.log('none');
+            matrixRainCanvas.style.display = 'none';
+        }
+
+        if (blockPatterns.length > 0) {
+            applyAnimations(svgContainer,blockPatterns);
+
+            //if (blockPatterns.length > 0 && image.style.display != 'none') {
+            const traitInscriptionIds = convertBlockPatternsToTraits(blockPatterns, updates);
+            console.log(`Block ${blk} has traits ${traitInscriptionIds}`);
+            if (traitInscriptionIds.length > 0) {
+                applyTraits(traits, traitInscriptionIds, svgContainer);
+                setTimeout(() => {
+                    const images = document.querySelectorAll('.image');
+                    //console.log('images:', images);
+                    let index = 0;
+                    images.forEach(image => {
+                        image.setAttribute('id', `image-${index}`);
+                        //console.log('reveal1', reveal1, `image-${index}` );
+                        if (noTraits == false && reveal1) {
+                            image.style.display = 'block';
+                        } else {
+                            image.style.display = 'none';
+                        }
+                        index++;
+                    });
+                }, 100);
+            }
+        }
+        //console.log('is1214', is1214);
+        
+        if (is1214 === true) {
+
+            const textElement = textContainer;
+            textContainer.style.display = 'block'; 
+            console.log('textElement:', textElement);
+
+            const messages = ["Happy Ordinals Day!", "DIA DE LOS PIXELES", `marks the ${getAnniversary(nowDate)}`, "of the first ordinal inscription,", "and the beginning of the", "decentralized information age.", "LFG!"];
+            let currentMessage = 0;
+
+            function typeWriterEffect(message, callback) {
+                textElement.classList.remove('fade-out');
+                textElement.textContent = '';
+                textElement.classList.add('typewriter');
+                textElement.textContent = message;
+
+                setTimeout(() => {
+                textElement.classList.remove('typewriter');
+                callback();
+                }, 5000);
+            }
+
+            function fadeOutEffect(callback) {
+                textElement.classList.add('fade-out');
+                setTimeout(() => {
+                callback();
+                }, 2000);
+            }
+
+            function startAnimationSequence() {
+                typeWriterEffect(messages[currentMessage], () => {
+                fadeOutEffect(() => {
+                    currentMessage = (currentMessage + 1) % messages.length;
+                    startAnimationSequence();
+                });
+                });
+            }
+
+            function getOrdinalSuffix(n) {
+                const s = ["th", "st", "nd", "rd"],
+                v = n % 100;
+                return n + (s[(v - 20) % 10] || s[v] || s[0]);
+            }
+
+            function getAnniversary(now) {
+                const year = now.getFullYear();
+                console.log('year', year);
+                const baseYear = 2022;
+                const diff = year - baseYear;
+
+                if (diff <= 0) {
+                return "Invalid date: Year must be greater than 2022";
+                }
+
+                return getOrdinalSuffix(diff) + " anniversary";
+            }
+
+            // Start the animation sequence
+            startAnimationSequence();
+
+            const mrCanvas = document.getElementById('matrixRainCanvas');
+            mrCanvas.style.zIndex = 9;
+        } else {
+            textContainer.style.display = 'none'; // Set display to none
+
+            const mrCanvas = document.getElementById('matrixRainCanvas');
+            mrCanvas.style.zIndex = 1;
+        }
+    });
+}
+
+function reverseDigits(block) {
+    const blockStr = block.toString();
+    const reversedArray = blockStr.split('').reverse();
+    const reversedDigits = reversedArray.map(char => parseInt(char));
+    return reversedDigits;
+}
+
+function playSound(soundId, volume, id = 'myAudio') {
+    if (jsonColorData && jsonColorData.sounds && jsonColorData.sounds[soundId]) {
+        //console.log(`Playing sound ${soundId} with volume ${volume}`);
+        
+        //console.log(`Audio element ${id}`);
+        const audioPath = `https://ordinals.com/content/${jsonColorData.sounds[soundId].id}`;
+        const audio = document.getElementById(id);
+
+        // If the audio is already playing, pause it first
+        if (!audio.paused) audio.pause();
+
+        // Update the audio element with the new source and volume
+        audio.src = audioPath;
+        audio.volume = volume;
+        audio.currentTime = 0;
+        
+        // Play the audio
+        audio.play().catch(error => console.error("Audio play failed:", error));
+    } else {
+        console.error(`Invalid sound ID or missing sound data: ${soundId}`);
+    }
+}
+
+function createLinearGradient(ctx, canvas, type = 0, colorStops) {
+    let x1, y1, x2, y2;
+    const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+
+    switch (type) {
+        case 0: // Horizontal gradient (left to right)
+            x1 = 0;
+            y1 = canvas.height / 2;
+            x2 = canvas.width;
+            y2 = canvas.height / 2;
+        break;
+        case 1: // Vertical gradient (top to bottom)
+            x1 = canvas.width / 2;
+            y1 = 0;
+            x2 = canvas.width / 2;
+            y2 = canvas.height;
+        break;
+        case 2: // Horizontal gradient (right to left)
+            x1 = canvas.width;
+            y1 = canvas.height / 2;
+            x2 = 0;
+            y2 = canvas.height / 2;
+        break;
+        case 3: // Vertical gradient (bottom to top)
+            x1 = canvas.width / 2;
+            y1 = canvas.height;
+            x2 = canvas.width / 2;
+            y2 = 0;
+        break;
+        case 4: // Angled gradient (top-left to bottom-right)
+            x1 = 0;
+            y1 = 0;
+            x2 = canvas.width;
+            y2 = canvas.height;
+        break;
+        default: // Angled gradient (customizable angle)
+        const angle = angles[type] || 0;
+        x1 = canvas.width * Math.cos(angle);
+        y1 = canvas.height * Math.sin(angle);
+        x2 = canvas.width * Math.cos(angle + Math.PI);
+        y2 = canvas.height * Math.sin(angle + Math.PI);
+        break;
+    }
+
+    const linearGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+
+    // Add color stops
+    colorStops.forEach(({ offset, color }) => {
+        linearGradient.addColorStop(offset, color);
+    });
+
+    // Draw angled gradient using fillPolygon
+    if (type >= angles.length) {
+        const angle = angles[type] || 0;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(canvas.width, 0);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+        ctx.fillStyle = linearGradient;
+        ctx.fill();
+    } else {
+        // Draw horizontal or vertical gradient using fillRect
+        ctx.fillStyle = linearGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function initBackground(container, dna, isFirst = true) {
+    try {
+        const canvas = backgroundCanvas;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Making the canvas full screen
+        canvas.width = 600;
+        canvas.height = 600;
+
+        let middleOffset = 0.7;
+        const isLinear = blockPatternExists(blockPatterns,'gematria_0') || blockPatternExists(blockPatterns,'gematria_1') || blockPatternExists(blockPatterns,'gematria_2') || blockPatternExists(blockPatterns,'gematria_3') || blockPatternExists(blockPatterns,'gematria_4');
+        if (isLinear) middleOffset = 0.5;
+    
+        const dnaRandom = Math.floor((Math.random() * blockheight + blk) % backgrounds.length);
+        const firstStops = [
+            { offset: 0, color: backgrounds[dna[2]] },
+            { offset: middleOffset, color: backgrounds[dna[1]] },
+            { offset: 1, color: backgrounds[dna[0]] }
+        ];
+        const otherStops = [
+            { offset: 0, color: backgrounds[(dnaRandom + 2) % backgrounds.length] },
+            { offset: middleOffset, color: backgrounds[(dnaRandom + 1) % backgrounds.length] },
+            { offset: 1, color: backgrounds[dnaRandom % backgrounds.length] }
+        ];
+        if (blockPatternExists(blockPatterns,'gematria_6')) {
+            firstStops.splice(2, 0, { offset: 0.8, color: backgrounds[dna[3]] });
+            otherStops.splice(2, 0, { offset: 0.8, color: backgrounds[(dnaRandom + 3) % backgrounds.length]  });
+        }
+
+        console.log('dna',dna);
+        console.log('dnaRandom',dnaRandom);
+        console.log('firstStops',firstStops);
+        if (blockPatternExists(blockPatterns,'gematria_6') || blockPatternExists(blockPatterns,'gematria_7')) {
+            const radialGradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2);
+            const stops = isFirst ? firstStops : otherStops;
+            stops.forEach(stop => radialGradient.addColorStop(stop.offset, stop.color));
+            ctx.fillStyle = radialGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (isLinear) {
+            const stops = isFirst ? firstStops : otherStops;
+            const linearGradient = createLinearGradient(ctx, canvas, gematria_1 % 5, stops);
+            ctx.fillStyle = linearGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+            const colorFirst = backgrounds[blk % backgrounds.length];
+            const colorSubsequent = backgrounds[dnaRandom];
+            ctx.fillStyle = isFirst ? colorFirst : colorSubsequent;
+            //console.log('fill style',ctx.fillStyle);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function doGematria(block, limit = 10) {
+    
+    const blockString = block.toString();
+    let sumDigits = blockString.split('').reduce((sum, digit) => sum + parseInt(digit), 0);
+    
+    // Reduce the sum to a two-digit number
+    while (sumDigits >= limit) {
+        sumDigits = sumDigits.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
+    }
+    return sumDigits;
+}
+
+function setupEventHandler(container) {
+    const svg = document.querySelector('#svg');
+    const thirdEyeElements = document.querySelectorAll('.thirdEye');
+    const noseX = document.querySelector('.noseX');
+    const philtrum = document.querySelector('.philtrum');
+    const mouth = document.querySelector('.mouth');
+    const temple = document.querySelector('.temple');
+    const right = document.querySelector('.right');
+    const left = document.querySelector('.left');
+    const outline = document.querySelector('#outline');
+    const background = backgroundCanvas;
+    //console.log('background:',background);
+
+    // applyGlitchEffectOnSVG(svg, svg.querySelector('#bolt2')); 
+    applyGlitchEffectOnSVG(svg, thirdEyeElements); 
+    
+    let touchStartTime;
+    function handleTouchThirdEye(event) {
+        if (event.type === 'touchstart') {
+            touchStartTime = new Date().getTime();
+        } else if (event.type === 'touchend') {
+            const touchEndTime = new Date().getTime();
+            const touchDuration = touchEndTime - touchStartTime;
+            thirdEyeElements.forEach(element => {
+                element.style.animation = 'none';
+                //console.log('touchDuration', touchDuration);
+                if (touchDuration < 200) {
+                    //console.log('thirdEye', element);
+                    changeElementColor();
+                } else {
+                    element.dispatchEvent(new Event('mouseenter'));
+                    setTimeout(() => {
+                        element.dispatchEvent(new Event('mouseleave'));
+                    }, 1000);
+                }
+            });
+        } 
+    }
+
+    thirdEyeElements.forEach(element => {
+        //console.log('thirdEye element:',element);
+        // Perform operations on each element
+
+        if (isTouchDevice) {
+            element.addEventListener('touchstart', handleTouchThirdEye);
+            element.addEventListener('touchend', handleTouchThirdEye);
+        }
+
+        element.addEventListener('mouseenter', () => {
+            //console.log('entries', entries);
+            element.style.transform = "scale(1.03)";
+            element.style.transformOrigin = "50% 50%";
+            element.style.color = "red"; 
+            element.style.backgroundColor = "yellow"; 
+            if (entries === 0) {
+                //console.log('playSound entries', entries);
+                playSound(4, 1);
+            }
+            entries++;
+        });
+
+        element.addEventListener('mouseleave', () => {
+            element.style.transform = "scale(1)";
+            element.style.color = ""; // Reset text color
+            element.style.backgroundColor = ""; // Reset background color
+        });
+    });
+
+    function handleTouchEventBackground(event) {
+        if (event.type === 'touchstart') {
+            touchStartTime = new Date().getTime();
+        } else if (event.type === 'touchend') {
+            const touchEndTime = new Date().getTime();
+            const touchDuration = touchEndTime - touchStartTime;
+            if (touchDuration < 200) {
+                console.log('blk:',blk,'colorArrays:',colorArrays);
+                playSound(8,1);
+                simulatePhotographFlash(document.documentElement);
+                displaySVG(skullUrl,blk,colorArrays,svg,updates,false); 
+                updates++;
+            } else {
+                svg.dispatchEvent(new Event('mouseenter'));
+            }
+        } 
+    }     
+    
+    if (isTouchDevice) {
+        background.addEventListener('touchstart', handleTouchEventBackground);
+        background.addEventListener('touchend', handleTouchEventBackground);
+    } else {
+        thirdEyeElements.forEach(element => {
+            //console.log(element);
+            element.addEventListener('click', () => changeElementColor());
+        });
+    }
+  
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 't') {
+            const images = document.querySelectorAll('.image');
+            //console.log('images:',images);
+            images.forEach(image => {
+                //console.log('image:',image);
+                const display = image.style.display === 'none' ? 'block' : 'none';
+                image.style.display = display;
+                console.log('display:',display);
+
+            });
+            noTraits =!noTraits;
+            event.stopImmediatePropagation();
+            //console.log('noTraits:',noTraits);
+        }
+
+        if (event.key === 'b') {
+            //console.log('rain:', rain);
+            alert(blk);
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 'r') {
+            const rain = document.querySelector('#matrixRainCanvas');
+            //console.log('rain:', rain);
+            if (rain) {
+                const display = rain.style.display === 'none' ? 'block' : 'none';
+                rain.style.display = display;
+                backgroundCanvas.focus();
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 'h') {
+            const input1 = document.querySelector('#input1');
+            const input2 = document.querySelector('#input2');
+            if (input1 && input2) {
+                const display = input1.style.display === 'none' ? 'block' : 'none';
+                input1.style.display = display;
+                input2.style.display = display;
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 's') {
+            sound = !sound;
+            console.log('sound:',sound);
+            const audioElement = document.querySelector('#myAudio');
+            console.log('audioElement:',audioElement);
+            if (!sound && !!audioElement) {
+                audioElement.pause();
+            }
+            event.stopImmediatePropagation();
+        }
+
+        if (event.key === 'a') {
+            stopAnimations = !stopAnimations;
+            console.log('stopAnimations:',stopAnimations);
+            event.stopImmediatePropagation();
+        }
+    });
+}
+
+function reorderColors(colorArray, reversedBlock) {
+    let colorArrayTemp = [...colorArray]; // Make a copy of the original color array
+    let newColorArray = [];
+
+    for (let i = 0; i < colorArray.length; i++) {
+        let colorIndex = parseInt(reversedBlock[i % reversedBlock.length], 10) % colorArrayTemp.length;
+        newColorArray.push(colorArrayTemp[colorIndex]);
+        colorArrayTemp.splice(colorIndex, 1); // Remove the used color
+    }
+
+    return newColorArray;
+}
+
+async function loadTraitImages(traitIds, outerContainer) {
+    if (!Array.isArray(traitIds) || traitIds.length === 0) {
+        console.error('Invalid trait IDs array');
+        return;
+    }
+
+    for (const traitId of traitIds) {
+        if (!traitId) {
+            console.error('Invalid trait ID');
+            continue;
+        }
+
+        try {
+            const url = `https://ordinals.com/content/${traitId}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                console.error(`Failed to fetch image: ${response.statusText}`);
+                continue;
+            }
+
+            const blob = await response.blob();
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onloadend = () => {
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(blob);
+
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 800;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false; // Disable smoothing to achieve pixelated effect
+                ctx.drawImage(img, 0, 0, 800, 800);
+                
+                // Create a new canvas for the cropped image
+                const croppedCanvas = document.createElement('canvas');
+                croppedCanvas.width = 600;
+                croppedCanvas.height = 600;
+                const croppedCtx = croppedCanvas.getContext('2d');
+                croppedCtx.imageSmoothingEnabled = false; // Disable smoothing to achieve pixelated effect
+
+                // Draw the cropped portion onto the new canvas
+                croppedCtx.drawImage(canvas, 100, 30, 600, 600, 0, 0, 600, 600);
+
+                // Convert the cropped image to a data URL
+                const dataURL = croppedCanvas.toDataURL();
+
+                // Create an image element for the cropped image
+                const imageElement = document.createElement('img');
+                imageElement.src = dataURL;
+                imageElement.style.position = 'absolute';
+                imageElement.style.zIndex = getZindex(traitId);
+                //console.log('traitId',traitId);
+                //console.log('zIndex',getZindex(traitId));
+                imageElement.style.imageRendering = 'pixelated';
+                imageElement.style.pointerEvents = 'none';
+                imageElement.classList.add('image');
+                imageElement.style.display = 'none';
+
+                // console.log('imageElement:',imageElement);
+
+                // Append the image element to the outerContainer
+                outerContainer.appendChild(imageElement);
+                //console.log('Image element appended to outerContainer');
+            };
+
+            img.onerror = (e) => {
+                console.error('Image loading error:', e);
+            };
+        } catch (error) {
+            console.error('Error in loadTraitImages function:', error);
+        }
+    }
+}
+
+function findBlockPatterns(block) {
+    const blockStr = block.toString();
+    const patterns = [];
+    const digits = '0123456789';
+    const multiples = [11, 12, 13, 14, 15, 16, 17, 18, 19, 33, 69];
+
+    // Calculate Fibonacci patterns
+    for (let length = 3; length <= 7; length++) {
+        const matching_blocks = findFibonacci(block, length);
+        if (matching_blocks.length > 0) {
+        patterns[`fibonacci_${length}`] = matching_blocks;
+        }
+    }
+
+    // Calculate embedded powers of 7
+    for (let length = 3; length <= 6; length++) {
+        for (let i = 0; i <= blockStr.length - length; i++) {
+            const substring = blockStr.substring(i, i + length);
+            if (isPowerOf7(parseInt(substring))) {
+                patterns.push(`power_of_7_${length}`);
+            }
+        }
+    }
+
+    patterns.push(`gematria_${gematria_1}`);
+    patterns.push(`gematria_${gematria_2}`);
+    
+    // Check repeating digits
+    for (let i = 0; i < digits.length; i++) {
+        const digit = digits[i];
+        const repeat3 = new RegExp(`${digit}{3}`);
+        const repeat4 = new RegExp(`${digit}{4}`);
+        const repeat5 = new RegExp(`${digit}{5}`);
+        
+        if (repeat3.test(blockStr)) patterns.push(`repeat_3_${digit}`);
+        if (repeat4.test(blockStr)) patterns.push(`repeat_4_${digit}`);
+        if (repeat5.test(blockStr)) patterns.push(`repeat_5_${digit}`);
+    }
+
+    // Check palindromes
+    for (let i = 0; i <= blockStr.length - 5; i++) {
+        const substr5 = blockStr.substring(i, i + 5);
+        if (substr5 === substr5.split('').reverse().join('')) {
+            patterns.push('palindrome_5');
+            break;
+        }
+    }
+    for (let i = 0; i <= blockStr.length - 6; i++) {
+        const substr6 = blockStr.substring(i, i + 6);
+        if (substr6 === substr6.split('').reverse().join('')) {
+            patterns.push('palindrome_6');
+            break;
+        }
+    }
+
+    // Check multiples
+    multiples.forEach(multiple => {
+        if (block % multiple === 0) {
+            patterns.push(`multiple_${multiple}`);
+        }
+    });
+
+    if (blockStr.includes('108')) {
+        patterns.push('contains_108');
+    }
+
+    if (blockStr.includes('321')) {
+        patterns.push('contains_321');
+    }
+
+    if (blockStr.includes('420')) {
+        patterns.push('contains_420');
+    }
+
+    if (blockStr.includes('1089')) {
+        patterns.push('contains_1089');
+    }
+
+    if (blockStr.includes('4761')) {
+        patterns.push('contains_4761');
+    }
+
+    if (blockStr.includes('28980')) {
+        patterns.push('contains_28980');
+    }
+
+    if (blockStr.includes('176400')) {
+        patterns.push('contains_176400');
+    }
+
+    // Check for perfect squares
+    const checkPerfectSquare = (numStr) => {
+        const num = parseInt(numStr);
+        const sqrt = Math.sqrt(num);
+        return sqrt === Math.floor(sqrt);
+    };
+
+    for (let i = 0; i <= blockStr.length - 3; i++) {
+        const substr3 = blockStr.substring(i, i + 3);
+        if (checkPerfectSquare(substr3)) {
+            patterns.push('perfect_square_3');
+            break;
+        }
+    }
+
+
+    for (let i = 0; i <= blockStr.length - 4; i++) {
+        const substr4 = blockStr.substring(i, i + 4);
+        if (checkPerfectSquare(substr4)) {
+            patterns.push('perfect_square_4');
+            break;
+        }
+    }
+
+    for (let i = 0; i <= blockStr.length - 5; i++) {
+        const substr5 = blockStr.substring(i, i + 5);
+        if (checkPerfectSquare(substr5)) {
+            patterns.push('perfect_square_5');
+            break;
+        }
+    }
+
+    for (let i = 0; i <= blockStr.length - 6; i++) {
+        const substr6 = blockStr.substring(i, i + 6);
+        if (checkPerfectSquare(substr6)) {
+            patterns.push('perfect_square_6');
+            break;
+        }
+    }
+
+    return patterns;
+}
+
+// Helper function to check if a number is a power of 7
+function isPowerOf7(num) {
+    while (num > 1) {
+        if (num % 7 !== 0) {
+            return false;
+        }
+        num /= 7;
+    }
+    return num === 1;
+}
+
+// Function to find Fibonacci numbers
+function findFibonacci(block, length) {
+  const block_str = block.toString();
+  const fibonacci = [0, 1];
+  let a = 0, b = 1;
+  while (fibonacci.length < length) {
+    const c = a + b;
+    fibonacci.push(c);
+    a = b;
+    b = c;
+  }
+
+  const matching_blocks = [];
+  for (let i = 0; i <= block_str.length - length; i++) {
+    const substr = block_str.slice(i, i + length);
+    if (fibonacci.includes(parseInt(substr))) {
+      matching_blocks.push(substr);
+    }
+  }
+
+  return matching_blocks;
+}
+
+// Function to find embedded perfect squares
+function findEmbeddedPerfectSquares(block_str, length) {
+  const embedded_squares = [];
+  for (let i = 0; i <= block_str.length - length; i++) {
+    const substr = block_str.slice(i, i + length);
+    const num = parseInt(substr);
+    if (isPerfectSquare(num)) {
+      embedded_squares.push(num);
+    }
+  }
+  return embedded_squares;
+}
+
+// Function to check if a number is a perfect square
+function isPerfectSquare(n) {
+  const sqrt = Math.sqrt(n);
+  return sqrt === Math.floor(sqrt);
+}
+
+// Function to calculate Gematria value
+function calculateGematria(block, limit) {
+  const block_str = block.toString();
+  let sum_digits = 0;
+  for (let i = 0; i < block_str.length; i++) {
+    sum_digits += parseInt(block_str[i]);
+  }
+
+  while (sum_digits >= 10) {
+    sum_digits = sum_digits.toString().split('').reduce((a, b) => a + parseInt(b), 0);
+  }
+
+  return sum_digits;
+}
+
+
+async function applyTraits(traits, traitIds, svgContainer) {
+    if (!traits) {
+        console.error('Invalid traits array');
+        return;
+    }
+    await loadTraitImages(traitIds, outerContainer, 30, 30);
+}
+
+async function getMetadata(url, retry = false) {
+    try {
+        // console.log(`Fetching metadata from ${url}`);
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        //console.log('Metadata fetched successfully');
+        return data;
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        if (!retry) {
+            const timestamp = Math.floor(Date.now() / (60000 * 10)); // 10 minutes
+            const newUrl = `${url}?timestamp=${timestamp}`;
+            console.log(`Retrying with new URL: ${newUrl}`);
+            return getMetadata(newUrl, true);
+        }
+        throw error;
+    }   
+}
+
+function applyGlitchEffectOnSVG(svgElement, elements) {
+    // console.log('svgElement:', svgElement);
+    const glitchEffects = [
+        () => {
+            svgElement.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+        },
+        () => {
+            svgElement.style.transform = `translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`;
+        },
+        () => {
+            if (Math.random() < 0.3) { // 
+                svgElement.style.opacity = `${0.7 + Math.random() * 0.3}`; 
+            } else {
+                svgElement.style.opacity = `1`; 
+            }
+        }
+    ];
+
+    const applyRandomEffect = () => {
+        glitchEffects[Math.floor(Math.random() * glitchEffects.length)]();
+    };
+
+    let glitchInterval;
+
+    elements.forEach(element => {
+        //console.log(element);
+        // Perform operations on each element
+        element.addEventListener('mouseenter', () => {
+            glitchInterval = setInterval(applyRandomEffect, 200); 
+            let soundIndex = 1;
+            if (blockPatternExists(blockPatterns,'contains_176400')) soundIndex = 5;
+            else if (blockPatternExists(blockPatterns,'contains_28980')) 
+                soundIndex = (blockheight + blk) % 5; 
+            else if (blockPatternExists(blockPatterns,'contains_4761')) 
+                soundIndex = blk % 5; 
+            if (entries===0) playSound(soundIndex,0.5,'myAudio2');
+        });
+
+        element.addEventListener('mouseleave', () => {
+            clearInterval(glitchInterval);
+            const svgElement = document.querySelector('.thirdEye');
+            svgElement.style.filter = '';
+            svgElement.style.transform = '';
+            svgElement.style.opacity = '';
+        });
+    });
+}
+
+function initMatrixRain(speedFactor, phrases, randomize) {
+    const canvas = matrixRainCanvas;
+    const context = canvas.getContext('2d');
+
+    // Clear the canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    canvas.width = 600;
+    canvas.height = 600;
+
+    const fontSize = 16;
+    const columns = Math.floor(canvas.width / fontSize);
+    //console.log('columns:',columns);
+    const drops = Array(columns).fill(0).map(() => ({
+    text: randomize ? phrases[Math.floor(Math.random() * phrases.length)] : '',
+    y: 1
+    }));
+
+    // Function to get the next character in the phrase
+    const getNextCharacter = (column) => {
+        if (drops[column].text === '') {
+            drops[column].text = phrases[column % phrases.length];
+        }
+        const char = drops[column].text.charAt(0);
+        drops[column].text = drops[column].text.slice(1) + char;
+        return char;
+    };
+
+    function draw() {
+        context.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        //console.log('gematria',gematria);
+        if (gematria_2 === 13 || gematria_2 === 48) {
+            context.fillStyle = '##0099FF';
+        } else if (gematria_2 === 14 || gematria_2 === 17 || gematria_2 === 21 || gematria_2 === 24 || 
+            gematria_2 === 27 || gematria_2 === 32 || gematria_2 === 36 || gematria_2 === 40) {
+                context.fillStyle = '#FF4040';
+        } else if (gematria_2 === 12) {
+            context.fillStyle = '#9900FF';
+        } else {
+            context.fillStyle = '#0F0';
+        } 
+        context.font = `${fontSize}px monospace`;
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = getNextCharacter(i);
+            context.fillText(text, i * fontSize, drops[i].y * fontSize);
+
+            if (drops[i].y * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i].y = 0;
+            }
+            drops[i].y++;
+        }
+    }
+
+    setInterval(draw, 1000 / speedFactor);
+}
+
+// Mock function to map dna[3] to a speed factor
+function getSpeedFactor(dnaValue) {
+    // Example mapping: map dnaValue (0-9) to a speed factor (1-10)
+    return Math.max(1, dnaValue);
+}
+
+function simulatePhotographFlash(element) {
+    const originalBackgroundColor = element.style.backgroundColor;
+    const originalFilter = element.style.filter;
+
+    element.style.backgroundColor = 'white';
+    element.style.filter = 'brightness(2)'; // Increase brightness for a more pronounced effect
+
+    // Add a subtle animation for a smoother transition
+    element.style.transition = 'background-color 0.3s, filter 0.3s';
+
+    setTimeout(() => {
+        element.style.backgroundColor = originalBackgroundColor;
+        element.style.filter = originalFilter;
+        element.style.transition = ''; // Reset the transition
+    }, 600); // Increase the duration for better visibility
+}
+
+function changeElementColor(element = null, color = null) {
+    console.log('changeElementColor', element, color);
+    if (element === null) element = document.querySelector('#thirdEyeInner');
+
+    element.removeAttribute('style');
+    if (color === null) {
+        // Generate a random color
+        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);   
+        if (blockPatternExists(blockPatterns,'gematria_9')) {
+            const newColor = backgrounds[Math.floor((blockheight + blk + changes) % backgrounds.length)];
+            element.setAttribute('stroke', newColor);
+            console.log('newColor', newColor); 
+        } else {
+            element.setAttribute('stroke', randomColor);
+            console.log('randomColor', randomColor);
+        }
+    } else {
+        element.setAttribute('stroke', color);
+        console.log('color', color);
+    }
+    changes++;
+}
+
+function getZindex(traitID) {
+  // Check if traits is an array
+  if (Array.isArray(traits)) {
+    // Find the trait object in the traits array using the inscriptionId
+    const traitObj = traits.find(trait => trait.inscriptionId === traitID);
+
+    //console.log('traitObj',traitObj);
+    // If the trait object is found
+    if (traitObj) {
+      const category = traitObj.category;
+
+      if ((category === 'Clothing' && traitObj.trait !== 'Polar Explorer')
+        || traitObj.trait === 'Chunky Gold Chain') {
+        return 2;
+      } else if (category === 'Cigarette') {
+        return 6;
+      } else {
+        return 4;
+      }
+    } else {
+      // If the trait object is not found, return a default zIndex value
+      console.log('the trait object is not found');
+      return 4; // or any other default value you prefer
+    }
+  } else {
+    // If traits is not an array, return a default zIndex value
+    console.log('traits is not an array');
+    return 4; // or any other default value you prefer
+  }
+}
+
+function selectedTraitsToString(selectedTraits) {
+  let traitsString = '';
+  //console.log('selectedTraits', selectedTraits);
+
+  for (let i = 0; i < selectedTraits.length; i++) {
+    const trait = selectedTraits[i];
+    console.log('trait', trait);
+    const catName = trait.category;
+    const traitName = trait.trait;
+    const pattern = trait.pattern;
+
+    traitsString += `${catName}: ${traitName} (${pattern})\n`;
+  }
+
+  return traitsString;
+}
+
+async function loadAndModifySkull(blk,now) {
+    console.log('Load and modify script', blk, now);
+
+    jsonColorData = await getMetadata("https://natowls.xyz/deploy.json");  //change
+    colorArrays = jsonColorData.colors;
+    soundArrays = jsonColorData.sounds;
+    //console.log('colorArrays',colorArrays);
+        
+    const scriptId = 'dynamic-script';
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
+        existingScript.remove();
+    }
+
+    console.log('blk',blk);
+    updates = 0;
+    //gematria_1 = doGematria(blk);
+    //gematria_2 = doGematria(blk,100);
+    //console.log('gematria_1',gematria_1);
+    //console.log('gematria_2',gematria_2);
+    displaySVG(skullUrl,blk,colorArrays,svgContainer,updates);
+}
+
+async function main() {
+  try {
+    blockheight = await getBlockheight();
+    console.log('blockheight:', blockheight);
+
+    reveal1 = blockheight > launchBlock + 144 * 3 ? true : false; // 3 days 
+    reveal2 = blockheight > launchBlock + 144 * 7 ? true : false; // 7 days
+    console.log('reveal1',reveal1);
+    console.log('reveal2',reveal2);
+ 
+    console.log('blk',blk);
+    console.log('now',now);
+
+    window.addEventListener('keydown', function(event) {
+        if (event.key === '3') {
+            console.log('patternIndex:', patternIndex);
+            alert(`UNAT Blocknumber ${blk}\nUnix Timestamp ${now}\nBlockheight ${blockheight}\nPattern Index ${patternIndex}
+            \nSelected Traits👇\n${selectedTraitsToString(selectedTraits)}`);
+            event.stopImmediatePropagation();
+        }
+    });
+
+    // Check no mint provided
+    if(mintText.includes('MINT_INSCRIPTION_ID')) {
+        let input1 = document.getElementById('input1')
+        input1.style.display = 'block'
+        input1.style.position = 'absolute'
+        input1.style.fontSize = '20px'
+        input1.style.margin = '20px'
+        input1.style.top = '0'
+        input1.value = blk
+
+        input1.addEventListener('input',(event) => {
+            //console.log('Input1', input1.value);
+            blk = input1.value
+            loadAndModifySkull(blk,now);
+        })
+
+        let input2 = document.getElementById('input2')
+        input2.style.display = 'block';
+        input2.style.position = 'absolute';
+        input2.style.fontSize = '20px';
+        input2.style.margin = '20px';
+        input2.style.top = '40';
+        input2.value = nowDate.toISOString().slice(0, 16);
+
+        input2.addEventListener('input',(event) => {
+            //console.log('Input2', input2.value);
+            nowDate = new Date(input2.value);
+            now = nowDate.getTime();
+            blockheight = estimateBlockHeight(now);
+            reveal1 = blockheight > launchBlock + 144 * 3 ? true : false;
+            reveal2 = blockheight > launchBlock + 144 * 7 ? true : false;
+            is1214 = isDDLP(now);
+            loadAndModifySkull(blk,now);
+        })
+        loadAndModifySkull(blk,now);
+    }
+    // Mint was provided
+    else {
+        const request = new XMLHttpRequest()
+        try {
+        //request.open('GET', '/content/' + mintText); //REPLACE
+        request.open('GET', 'https://ordinals.com/content/' + mintText); //REPLACE
+        request.responseType = 'text';
+        request.addEventListener('load', () => initialize(request.response));
+        request.addEventListener('error', () => console.error('XHR error'));
+        request.send();
+        } catch (error) {
+        console.error(`XHR error ${request.status}`);
+        }
+    }
+} catch (error) {
+    console.error('Error getting block height:', error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    main();
+    //console.log('DOMContentLoaded');
+
+    // Create background canvas
+    backgroundCanvas = document.createElement('canvas');
+    backgroundCanvas.id = 'backgroundCanvas';
+    backgroundCanvas.style.position = 'absolute';
+    backgroundCanvas.style.top = '0';
+    backgroundCanvas.style.left = '0';
+    backgroundCanvas.style.width = '100%';
+    backgroundCanvas.style.height = '100%';
+    backgroundCanvas.style.zIndex = '0';
+    outerContainer.appendChild(backgroundCanvas);
+    //console.log('backgroundCanvas appended:', backgroundCanvas);
+
+    if (!isTouchDevice) {    
+        //console.log('background no touch:',backgroundCanvas);
+        backgroundCanvas.addEventListener('click', () => {
+            console.log('background clicked',event);
+            playSound(8,1);
+            simulatePhotographFlash(document.documentElement);
+            displaySVG(skullUrl,blk, colorArrays, svgContainer, updates,false); 
+            updates++;
+        });
+    }
+
+    window.addEventListener('focus', () => {
+        console.log('focus');
+        backgroundCanvas.focus();
+    });
+
+    // Create matrix rain canvas
+    matrixRainCanvas = document.createElement('canvas');
+    matrixRainCanvas.id = 'matrixRainCanvas';
+    matrixRainCanvas.style.position = 'absolute';
+    matrixRainCanvas.style.top = '0';
+    matrixRainCanvas.style.left = '0';
+    matrixRainCanvas.style.width = '100%';
+    matrixRainCanvas.style.height = '100%';
+    matrixRainCanvas.style.zIndex = '1';
+    matrixRainCanvas.style.pointerEvents = 'none';
+    outerContainer.appendChild(matrixRainCanvas);
+    //console.log('matrixRainCanvas appended:', matrixRainCanvas);  
+
+    // Create a new div element
+    textContainer = document.createElement('div');
+    textContainer.id = 'textContainer';
+    textContainer.classList.add('text-container');
+
+    // Append the new div element to the body or any other container element
+    outerContainer.appendChild(textContainer);
+
+    // Create SVG container
+    svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgContainer.id = 'svgContainer';
+    svgContainer.setAttribute('width', '500');
+    svgContainer.setAttribute('height', '500');
+    svgContainer.style.position = 'absolute';
+    svgContainer.style.top = '50%';
+    svgContainer.style.left = '50%';
+    svgContainer.style.transform = 'translate(-50%, -50%)';
+    svgContainer.style.zIndex = '3';
+    svgContainer.style.pointerEvents = 'none';
+    outerContainer.appendChild(svgContainer);
+    //console.log('svgContainer appended:', svgContainer);
+
+    // Ensure outerContainer is appended to the body
+    document.body.appendChild(outerContainer);
+});
+
+</script>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Rain with SVG</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+  #background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #000, #333);
+    z-index: 1;
+  }
+  #matrixRain {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  #svgContainer {
+    position: relative;
+    z-index: 3;
+  }
+</style>
+</head>
+<body>
+
+<div id="background"></div>
+<canvas id="matrixRain"></canvas>
+<div id="svgContainer">
+  <!-- Your SVG will be dynamically inserted here -->
+</div>
+
+<script>
+  // Mock DNA array for demonstration
+  const dna = [1, 2, 3, 4, 5, 6]; // Adjust as needed
+
+  // Function to load the SVG
+  function loadSVG(url, containerId) {
+    fetch(url)
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById(containerId).innerHTML = data;
+      });
+  }
+
+  // Function to initialize the Matrix rain effect
+  function initMatrixRain(speedFactor, phrases, randomize) {
+    const canvas = document.getElementById('matrixRain');
+    const context = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(columns).fill(0).map(() => ({
+      text: randomize ? phrases[Math.floor(Math.random() * phrases.length)] : '',
+      y: 1
+    }));
+
+    // Function to get the next character in the phrase
+    const getNextCharacter = (column) => {
+      if (drops[column].text === '') {
+        drops[column].text = phrases[column % phrases.length];
+      }
+      const char = drops[column].text.charAt(0);
+      drops[column].text = drops[column].text.slice(1) + char;
+      return char;
+    };
+
+    function draw() {
+      context.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      context.fillStyle = '#0F0';
+      context.font = `${fontSize}px monospace`;
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = getNextCharacter(i);
+        context.fillText(text, i * fontSize, drops[i].y * fontSize);
+
+        if (drops[i].y * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i].y = 0;
+        }
+        drops[i].y++;
+      }
+    }
+
+    setInterval(draw, 1000 / speedFactor);
+  }
+
+  // Mock function to map dna[3] to a speed factor
+  function getSpeedFactor(dnaValue) {
+    // Example mapping: map dnaValue (0-9) to a speed factor (1-10)
+    return Math.max(1, dnaValue);
+  }
+
+  // Call the functions
+  document.addEventListener('DOMContentLoaded', () => {
+    const speedFactor = getSpeedFactor(dna[3]);
+    const phrases = ['THE META IS DOT META', 'WEB4 IS THE SPACE ABOVE THE WEBPAGE', 'GOOD MORNING LFG', 'ALL TIME HIGH', 'I GOT A $DOG IN THIS FIGHT','CATCH THE BULL BY THE HORNS','THAT SATS MOVIE GONNA SLAP','THE METAWEB', 'METAWEB PUNKS', 'METAORDINAL THEORY'];
+    const randomize = false; // Set to false to display phrases in a row
+    initMatrixRain(speedFactor, phrases, randomize);
+    loadSVG('https://natowls.xyz/skull.svg', 'svgContainer');
+  });
+</script>
+
+</body>
+</html>

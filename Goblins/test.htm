@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Gradient Test</title>
+    <style>
+        #image-canvas {
+            border: 1px solid black; /* Optional: Add a border to visualize the canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="image-canvas" width="600" height="600"></canvas>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('image-canvas');
+            if (!canvas) {
+                console.error('Canvas element not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Failed to get 2D rendering context for the canvas');
+                return;
+            }
+
+            const size = 600;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Example: Apply conic gradient based on some condition (e.g., moon phase)
+            const phase = 0.75; // Replace with your actual phase calculation
+            const category = 0; // Replace with your actual category logic
+
+                // Last quarter moon (half moon)
+                // Set background to a conic gradient
+                console.log('third quarter');
+
+                const x = size / 2;
+                const y = size / 2;
+
+                // Check if createConicGradient is supported
+                if (typeof ctx.createConicGradient === 'function') {
+                    const gradient = ctx.createConicGradient(0, x, y);
+                    gradient.addColorStop(0, 'red');
+                    gradient.addColorStop(0.5, 'yellow');
+                    gradient.addColorStop(0.7, 'green');
+                    gradient.addColorStop(0.9, 'blue');
+                    gradient.addColorStop(1, 'red');
+
+                    // Log gradient information
+                    console.log("Gradient:", gradient);
+                    console.log("Color Stops:");
+                    console.log("  Stop 0: red at 0");
+                    console.log("  Stop 1: yellow at 0.5");
+                    console.log("  Stop 2: blue at 1");
+
+                    // Fill the canvas with the gradient
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, size, size);
+
+                    // Stroke a rectangle around the canvas to visualize the gradient
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(0, 0, size, size);
+                } else {
+                    console.error('Conic gradients are not supported in this browser.');
+                    // Fallback to a solid color or another gradient
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(0, 0, size, size);
+                }
+            
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Effects</title>
+</head>
+<body>
+    <div id="effectsContainer" style="position: relative; width: 600px; height: 600px;"></div>
+    <script>
+// CSS Styles
+const styles = `
+@keyframes eye-glow {
+    0% { filter: drop-shadow(0 0 5px rgba(0, 255, 0, 1)); }
+    50% { filter: drop-shadow(0 0 15px rgba(0, 255, 0, 1)); }
+    100% { filter: drop-shadow(0 0 5px rgba(0, 255, 0, 1)); }
+}
+.glow { animation: eye-glow 1s infinite; }
+
+@keyframes pulsate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+.pulsate { animation: pulsate 1s infinite; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+.shake { animation: shake 0.5s infinite; }
+
+@keyframes breathing {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.breathing { animation: breathing 2s infinite; }
+
+@keyframes fog {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+}
+.fog { animation: fog 3s infinite; }
+`;
+
+// Append the styles to the head
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
+
+// Dynamic effect functions
+
+// Eye Glow
+function applyEyeGlow(svgElement, duration) {
+    svgElement.style.animationDuration = duration + 's';
+    svgElement.classList.add('glow');
+}
+
+// Pulsating Glow
+function applyPulsatingGlow(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('pulsate');
+}
+
+// Eye Follow
+function eyeFollow(svgElement) {
+    document.addEventListener('mousemove', (event) => {
+        const rect = svgElement.getBoundingClientRect();
+        const eyeX = rect.left + rect.width / 2;
+        const eyeY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - eyeY, event.clientX - eyeX);
+        const x = Math.cos(angle) * 10;
+        const y = Math.sin(angle) * 10;
+        svgElement.setAttribute('transform', `translate(${x}, ${y})`);
+    });
+}
+
+// Shaking
+function applyShaking(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('shake');
+}
+
+// Breathing
+function applyBreathing(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('breathing');
+}
+
+// Mouse Follow
+function mouseFollow(element) {
+    document.addEventListener('mousemove', (event) => {
+        element.style.left = event.clientX + 'px';
+        element.style.top = event.clientY + 'px';
+    });
+}
+
+// Fog
+function applyFog(element, duration) {
+    element.style.animationDuration = duration + 's';
+    element.classList.add('fog');
+}
+
+// Create elements and apply effects dynamically
+const container = document.getElementById('effectsContainer');
+
+// Eye Glow
+const eyeGlowSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+eyeGlowSvg.setAttribute("width", "100");
+eyeGlowSvg.setAttribute("height", "100");
+eyeGlowSvg.setAttribute("id", "eye");
+const eyeCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+eyeCircle.setAttribute("cx", "50");
+eyeCircle.setAttribute("cy", "50");
+eyeCircle.setAttribute("r", "20");
+eyeCircle.setAttribute("fill", "blue");
+eyeGlowSvg.appendChild(eyeCircle);
+container.appendChild(eyeGlowSvg);
+applyEyeGlow(eyeGlowSvg, 2);
+
+// Pulsating Glow
+const pulsatingDiv = document.createElement('div');
+pulsatingDiv.setAttribute('id', 'pulsating-element');
+pulsatingDiv.style.width = '100px';
+pulsatingDiv.style.height = '100px';
+pulsatingDiv.style.backgroundColor = 'red';
+container.appendChild(pulsatingDiv);
+applyPulsatingGlow(pulsatingDiv, 2);
+
+// Eye Follow
+const eyeFollowSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+eyeFollowSvg.setAttribute("width", "100");
+eyeFollowSvg.setAttribute("height", "100");
+eyeFollowSvg.setAttribute("class", "eye");
+const followCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+followCircle.setAttribute("cx", "50");
+followCircle.setAttribute("cy", "50");
+followCircle.setAttribute("r", "20");
+followCircle.setAttribute("fill", "blue");
+eyeFollowSvg.appendChild(followCircle);
+container.appendChild(eyeFollowSvg);
+eyeFollow(eyeFollowSvg);
+
+// Shaking
+const shakingDiv = document.createElement('div');
+shakingDiv.setAttribute('id', 'shaking-element');
+shakingDiv.style.width = '100px';
+shakingDiv.style.height = '100px';
+shakingDiv.style.backgroundColor = 'green';
+container.appendChild(shakingDiv);
+applyShaking(shakingDiv, 0.5);
+
+// Breathing
+const breathingDiv = document.createElement('div');
+breathingDiv.setAttribute('id', 'breathing-element');
+breathingDiv.style.width = '100px';
+breathingDiv.style.height = '100px';
+breathingDiv.style.backgroundColor = 'purple';
+container.appendChild(breathingDiv);
+applyBreathing(breathingDiv, 2);
+
+// Mouse Follow
+const mouseFollowDiv = document.createElement('div');
+mouseFollowDiv.setAttribute('id', 'mouse-follow');
+mouseFollowDiv.style.width = '100px';
+mouseFollowDiv.style.height = '100px';
+mouseFollowDiv.style.backgroundColor = 'orange';
+mouseFollowDiv.style.position = 'absolute';
+container.appendChild(mouseFollowDiv);
+mouseFollow(mouseFollowDiv);
+
+// Fog
+const fogDiv = document.createElement('div');
+fogDiv.setAttribute('id', 'fog-element');
+fogDiv.style.width = '600px';
+fogDiv.style.height = '400px';
+fogDiv.style.background = 'url("fog.png")';
+fogDiv.style.position = 'absolute';
+container.appendChild(fogDiv);
+applyFog(fogDiv, 3);
+
+
+
+
+    </script>
+</body>
+</html>
